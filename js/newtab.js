@@ -792,11 +792,21 @@
       searchForm.classList.add("eng-" + engine);
     }
     applyEngineAccent();
+    // Restore the persisted engine (synced across the user's machines, §3.6).
+    CFG.ready(function () {
+      const saved = CFG.get("search", "engine", "google");
+      if (saved && saved !== engine) {
+        engine = saved;
+        segBtns.forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.engine === engine)));
+        applyEngineAccent();
+      }
+    });
     segBtns.forEach((b) =>
       b.addEventListener("click", () => {
         engine = b.dataset.engine;
         segBtns.forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
         applyEngineAccent();
+        CFG.set("search", "engine", engine);
         $("#q").focus();
       })
     );

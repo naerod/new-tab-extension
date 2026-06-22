@@ -29,7 +29,12 @@ Format : décision · contexte · choix · conséquences.
 - **Choix** : `js/sw.js` (module) déclaré `background.service_worker` ; `chrome.alarms` pour le polling ; écriture cache ; newtab cache-first + `storage.onChanged`.
 - **Conséquences** : ajout permission `alarms` au manifest ; OAuth (`chrome.identity`) reste utilisable depuis le SW.
 
-## ADR-006 — Accent global : EN ATTENTE de décision Dorian
-- **Contexte** : brief §0.3 impose indigo unique ; l'existant ("Design Claude") utilise orange `#d97757` partout.
-- **Choix** : **à confirmer** (question posée). Par défaut on suit le brief (indigo) si Dorian ne tranche pas autrement.
-- **Conséquences** : si indigo, restyling global des surfaces d'accent ; `#d97757` resterait réservé à l'accent du moteur Claude (§3.6).
+## ADR-006 — Accent global = indigo (tranché par Dorian 2026-06-22)
+- **Contexte** : brief §0.3 impose indigo unique ; l'existant ("Design Claude") utilisait orange `#d97757` partout.
+- **Choix** : **indigo** (suivre le brief). Dark : `--accent:#7b83ff` ; Light : `--accent:#4f55d6`. `--on-accent` = `#13151b` (dark) / `#fff` (light) pour le texte sur aplats d'accent. L'orange `#d97757` est **réservé** à l'accent du moteur de recherche Claude (§3.6).
+- **Conséquences** : toutes les surfaces d'accent passent par `var(--accent*)` → bascule globale faite en une fois. Une passe WCAG AA reste à valider sur le dark (texte blanc/dark sur indigo des boutons primaires = AA large, OK ; à confirmer visuellement).
+
+## ADR-007 — Clés API providers : proxy serveur (tranché par Dorian 2026-06-22)
+- **Contexte** : football-data.org exige un token ; une clé embarquée dans une extension publiée est visible de tous. Brief §3.3/§6.
+- **Choix** : **proxy serveur** — on étend le proxy existant `naerod-api` (CT110, déjà utilisé pour Leetify/Faceit) avec les endpoints sport. Les clés restent côté serveur, jamais dans l'extension ni en `sync`.
+- **Conséquences** : la couche providers tape les endpoints du proxy, pas les API tierces directement (pour les sources à clé). Les sources sans clé (ESPN, Jolpica, OpenF1, Open-Meteo) peuvent rester en direct. `docs/SETUP.md` documentera la config du proxy. host_permissions : ajouter le domaine du proxy.

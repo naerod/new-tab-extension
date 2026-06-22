@@ -317,9 +317,14 @@
     --ink-4:#5e5a50;      /* faint */
 
     /* Single accent — Claude coral, used sparingly */
-    --accent:#d97757;
-    --accent-soft:rgba(217,119,87,.15);
-    --accent-line:rgba(217,119,87,.45);
+    /* Single accent hue = indigo (brief §0.3). Green/red reserved for indicators. */
+    --accent:#7b83ff;
+    --accent-soft:rgba(123,131,255,.16);
+    --accent-line:rgba(123,131,255,.5);
+    --on-accent:#13151b;              /* text/icon over accent fills */
+    /* Search bar accent — recomputed per selected engine (§3.6); defaults to accent */
+    --search-accent:var(--accent);
+    --search-accent-line:var(--accent-line);
 
     /* Finance only */
     --up:#5fd0a0;
@@ -349,9 +354,10 @@
     --ink-3:#86806f;
     --ink-4:#aaa395;
 
-    --accent:#c75f3c;
-    --accent-soft:rgba(199,95,60,.13);
-    --accent-line:rgba(199,95,60,.42);
+    --accent:#4f55d6;
+    --accent-soft:rgba(79,85,214,.12);
+    --accent-line:rgba(79,85,214,.42);
+    --on-accent:#ffffff;
 
     --up:#1f9d6b;
     --down:#d65656;
@@ -479,9 +485,16 @@
     border-radius:14px;
     padding:7px 8px 7px 18px;
     margin-bottom:30px;
-    transition:border-color .18s, background .18s;
+    transition:border-color .18s, background .18s, box-shadow .18s;
   }
-  .search:focus-within{ border-color:var(--accent-line); background:var(--card-2); }
+  /* §3.6 — search bar accent follows the selected engine (class set by JS) */
+  .search.eng-google{ --search-accent:#e8eaed; --search-accent-line:rgba(232,234,237,.45); }
+  .search.eng-gemini{ --search-accent:#4285f4; --search-accent-line:rgba(66,133,244,.5); }
+  .search.eng-claude{ --search-accent:#d97757; --search-accent-line:rgba(217,119,87,.5); }
+  .search:focus-within{
+    border-color:var(--search-accent-line); background:var(--card-2);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--search-accent) 20%, transparent);
+  }
   .search .glass{ width:18px; height:18px; flex:none; color:var(--ink-3); }
   .search input{
     flex:1; background:transparent; border:0; outline:none;
@@ -673,7 +686,7 @@
   .cal-day .num{ font-size:12px; color:var(--ink-3); align-self:flex-start; }
   .cal-day.today{ border-color:var(--accent-line); }
   .cal-day.today .num{
-    background:var(--accent); color:#17191a; font-weight:600;
+    background:var(--accent); color:var(--on-accent); font-weight:600;
     width:21px; height:21px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
   }
@@ -843,8 +856,8 @@ img.fav-dark{ filter:brightness(0) invert(1); }
   padding:9px 16px; border-radius:9px; transition:.15s;
 }
 .btn:hover{ color:var(--ink); background:var(--hover); }
-.btn.primary{ background:var(--accent); border-color:var(--accent); color:#17191a; }
-.btn.primary:hover{ filter:brightness(1.08); background:var(--accent); color:#17191a; }
+.btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+.btn.primary:hover{ filter:brightness(1.08); background:var(--accent); color:var(--on-accent); }
 
 /* watchlist edit controls (Bourse) */
 #stocks .srm{
