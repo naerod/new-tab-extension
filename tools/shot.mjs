@@ -55,7 +55,7 @@ await page.evaluate(async ({ theme, seed }) => {
   if (seed) {
     try {
       await chrome.storage.sync.set({
-        config: { sports: ["football"], follows: { football: [
+        config: { sports: ["football", "f1"], follows: { football: [
           { type: "team", id: "524", name: "PSG", comp: "FL1" },
           { type: "team", id: "57", name: "Arsenal", comp: "PL" },
           { type: "league", comp: "FL1" }, { type: "league", comp: "CL" },

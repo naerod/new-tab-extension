@@ -61,6 +61,29 @@ async function footballTeamMatches(teamId, opts) {
   }
 }
 
+// ---- F1 (Jolpica / Ergast, keyless, direct) --------------------------------
+const F1_BASE = "https://api.jolpi.ca/ergast/f1";
+async function f1Get(path, key, ttl) {
+  const cached = await storage.getCacheStale(key);
+  if (cached && !cached.stale) return cached.value;
+  try {
+    const j = await httpGet(F1_BASE + path);
+    await storage.setCache(key, j, ttl);
+    return j;
+  } catch (e) { return cached ? cached.value : null; }
+}
+async function f1Schedule() {
+  const j = await f1Get("/current.json", "sport:f1:sched", 6 * 3600_000);
+  return (j && j.MRData && j.MRData.RaceTable && j.MRData.RaceTable.Races) || [];
+}
+async function f1Standings(kind) {
+  const path = kind === "constructor" ? "/current/constructorStandings.json" : "/current/driverStandings.json";
+  const j = await f1Get(path, "sport:f1:" + kind, 6 * 3600_000);
+  const lst = j && j.MRData && j.MRData.StandingsTable && j.MRData.StandingsTable.StandingsLists && j.MRData.StandingsTable.StandingsLists[0];
+  if (!lst) return [];
+  return kind === "constructor" ? (lst.ConstructorStandings || []) : (lst.DriverStandings || []);
+}
+
 async function footballScoreboard(code) {
   const key = "sport:scoreboard:" + code;
   const cached = await storage.getCacheStale(key);
@@ -85,6 +108,8 @@ window.NT = {
   footballStandings,
   footballTeams,
   footballTeamMatches,
+  f1Schedule,
+  f1Standings,
   refresh() { try { chrome.runtime.sendMessage({ type: "refresh" }); } catch (e) { /* SW asleep */ } },
 };
 window.dispatchEvent(new CustomEvent("nt:ready"));

@@ -2538,14 +2538,16 @@
 
     const tfmt = new Intl.DateTimeFormat(LOCALE(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
-    let cfg = { sports: [], follows: { football: [] }, sport: { rotate: 60, mode: "auto" } };
+    let cfg = { sports: [], follows: { football: [] }, f1: { driver: null }, sport: { rotate: 60, mode: "auto" } };
     let boards = {};      // league code -> Match[] (ESPN scoreboard)
     let standings = {};   // comp -> Standing (football-data)
     let teamMx = {};      // teamId -> Match[] (football-data, finished + scheduled)
     let teamsByComp = {}; // comp -> Team[] (settings autocomplete)
+    let f1sched = [], f1drv = [], f1con = []; // F1 schedule + driver/constructor standings
     let pager = null, rotTimer = null, pendingTeamLeague = null;
 
     const footballOn = () => cfg.sports.indexOf("football") !== -1;
+    const f1On = () => cfg.sports.indexOf("f1") !== -1;
     const follows = () => (cfg.follows && cfg.follows.football) || [];
     const leagueFollows = () => follows().filter((f) => f.type !== "team");
     const teamFollows = () => follows().filter((f) => f.type === "team");
@@ -2570,6 +2572,65 @@
           teamMx[f.id] = (fin || []).concat(sc || []);
         })
       ));
+      if (f1On()) {
+        const [sc, dr, co] = await Promise.all([NT.f1Schedule(), NT.f1Standings("driver"), NT.f1Standings("constructor")]);
+        f1sched = sc || []; f1drv = dr || []; f1con = co || [];
+      }
+    }
+
+    // ---- F1 (Jolpica) : prochaine séance en heure de Paris + 2 championnats ----
+    const F1_SESSIONS = [
+      { k: "FirstPractice", fr: "EL1", en: "FP1" }, { k: "SecondPractice", fr: "EL2", en: "FP2" },
+      { k: "ThirdPractice", fr: "EL3", en: "FP3" }, { k: "SprintQualifying", fr: "Qualifs Sprint", en: "Sprint Quali" },
+      { k: "Sprint", fr: "Sprint", en: "Sprint" }, { k: "Qualifying", fr: "Qualifs", en: "Quali" },
+    ];
+    const parisFmt = new Intl.DateTimeFormat(LOCALE(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
+    const raceDT = (r) => new Date(r.date + "T" + (r.time || "13:00:00Z"));
+    function f1Sessions(r) {
+      const out = [];
+      F1_SESSIONS.forEach((s) => { if (r[s.k] && r[s.k].date) out.push({ label: LANG === "fr" ? s.fr : s.en, when: new Date(r[s.k].date + "T" + (r[s.k].time || "12:00:00Z")) }); });
+      out.push({ label: LANG === "fr" ? "Course" : "Race", when: raceDT(r) });
+      return out.sort((a, b) => a.when - b.when);
+    }
+    function f1NextSession() {
+      const now = Date.now();
+      for (const r of f1sched) for (const s of f1Sessions(r)) if (s.when.getTime() > now - 2 * 3600e3) return { race: r, session: s };
+      return null;
+    }
+    function f1Countdown(diff) {
+      const d = Math.floor(diff / 86400000), h = Math.floor((diff % 86400000) / 3600000), m = Math.floor((diff % 3600000) / 60000);
+      return (d > 0 ? d + "j " : "") + h + "h " + m + "min";
+    }
+    function f1Compact() {
+      const head = '<div class="sp-league">' + (LANG === "fr" ? "Formule 1" : "Formula 1") + '</div>';
+      const nx = f1NextSession();
+      if (!nx) return '<div class="sp-page">' + head + '<div class="empty">' + t("empty.f1") + '</div></div>';
+      const diff = nx.session.when.getTime() - Date.now();
+      const cd = diff > 0 ? f1Countdown(diff) : (LANG === "fr" ? "En cours" : "Live");
+      const leader = f1drv[0];
+      return '<div class="sp-page">' + head
+        + '<div class="sp-match"><div class="sp-teams"><span class="sp-team">' + escHtml(nx.race.raceName) + '</span></div>'
+        + '<div class="sp-meta"><span class="sp-live">' + escHtml(nx.session.label) + '</span></div></div>'
+        + '<div class="f1-line"><span class="f1-when">' + escHtml(parisFmt.format(nx.session.when)) + '</span><span class="f1-cd tnum">' + cd + '</span></div>'
+        + (leader ? '<div class="f1-leader">' + (LANG === "fr" ? "Leader" : "Leader") + ' : ' + escHtml(leader.Driver.familyName) + ' · ' + leader.points + ' pts</div>' : '')
+        + '</div>';
+    }
+    function f1Section() {
+      const drvId = cfg.f1.driver;
+      const drvRows = f1drv.slice(0, 12).map((s) => '<tr' + (drvId && s.Driver.driverId === drvId ? ' class="sv-hl"' : '') + '><td>' + s.position + '</td><td class="l">' + escHtml(s.Driver.givenName[0] + ". " + s.Driver.familyName) + '</td><td class="l">' + escHtml((s.Constructors && s.Constructors[0] && s.Constructors[0].name) || "") + '</td><td class="sv-pts">' + s.points + '</td><td>' + s.wins + '</td></tr>').join("");
+      const conRows = f1con.slice(0, 12).map((s) => '<tr><td>' + s.position + '</td><td class="l">' + escHtml(s.Constructor.name) + '</td><td class="sv-pts">' + s.points + '</td><td>' + s.wins + '</td></tr>').join("");
+      const sched = f1sched.filter((r) => raceDT(r).getTime() > Date.now() - 4 * 3600e3).slice(0, 4).map((r) => {
+        const sessions = f1Sessions(r).filter((s) => s.when.getTime() > Date.now() - 2 * 3600e3).slice(0, 5);
+        return '<div class="f1-gp"><div class="f1-gp-h">M' + r.round + ' · ' + escHtml(r.raceName) + '</div>'
+          + sessions.map((s) => '<div class="f1-srow"><span>' + escHtml(s.label) + '</span><span class="f1-when">' + escHtml(parisFmt.format(s.when)) + '</span></div>').join("") + '</div>';
+      }).join("");
+      const tbl = (head, body) => '<div class="sv-table-wrap"><table class="sv-table tnum"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
+      return '<div class="sv-league"><h3>' + (LANG === "fr" ? "Formule 1" : "Formula 1") + '</h3>'
+        + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Championnat pilotes" : "Drivers' championship") + '</div>'
+        + tbl('<tr><th>#</th><th class="l">' + (LANG === "fr" ? "Pilote" : "Driver") + '</th><th class="l">' + (LANG === "fr" ? "Écurie" : "Team") + '</th><th>Pts</th><th>V</th></tr>', drvRows) + '</div>'
+        + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Championnat constructeurs" : "Constructors' championship") + '</div>'
+        + tbl('<tr><th>#</th><th class="l">' + (LANG === "fr" ? "Écurie" : "Team") + '</th><th>Pts</th><th>V</th></tr>', conRows) + '</div>'
+        + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Calendrier (heure de Paris)" : "Schedule (Paris time)") + '</div>' + (sched || '<div class="sv-soon">' + t("empty.f1") + '</div>') + '</div></div>';
     }
 
     function pickMatch(matches) {
@@ -2650,6 +2711,7 @@
     function followByKey(k) { return follows().find((f) => keyOf(f) === k); }
 
     function compactPage(k) {
+      if (k === "F1") return f1Compact();
       const f = followByKey(k); if (!f) return "";
       if (f.type === "team") {
         const snip = compactStanding(standings[f.comp], f.id);
@@ -2666,7 +2728,7 @@
     function ensurePager() {
       if (pager) return;
       pager = makePager(card, host, { pageSize: 1, renderSlice: (slice) => slice.length ? compactPage(slice[0]) : "" });
-      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow")) return; if (footballOn() && follows().length) openView(); });
+      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow")) return; if ((footballOn() && follows().length) || f1On()) openView(); });
     }
     function startRotation() {
       if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
@@ -2675,13 +2737,15 @@
     }
     function render() {
       ensurePager();
-      if (!footballOn() || !follows().length) {
+      const hasFb = footballOn() && follows().length;
+      if (!hasFb && !f1On()) {
         if (meta) meta.textContent = "";
         pager.message('<div class="empty">' + t("empty.sport") + '</div>');
         if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
         return;
       }
-      const keys = orderedFollows().map(keyOf);
+      const keys = (footballOn() ? orderedFollows().map(keyOf) : []);
+      if (f1On()) keys.push("F1");
       if (meta) meta.textContent = keys.length + (LANG === "fr" ? (keys.length > 1 ? " suivis" : " suivi") : (keys.length > 1 ? " follows" : " follow"));
       pager.set(keys);
       startRotation();
@@ -2710,7 +2774,8 @@
         + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Classement" : "Standings") + '</div>' + standingsTable(standings[f.comp]) + '</div></div>';
     }
     function openView() {
-      const sections = orderedFollows().map((f) => f.type === "team" ? teamSection(f) : leagueSection(f)).join("");
+      let sections = (footballOn() ? orderedFollows().map((f) => f.type === "team" ? teamSection(f) : leagueSection(f)).join("") : "");
+      if (f1On()) sections += f1Section();
       Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'));
     }
 
@@ -2719,6 +2784,7 @@
       window.NT.storage.setConfig("sports", cfg.sports);
       window.NT.storage.setConfig("follows", cfg.follows);
       window.NT.storage.setConfig("sportCfg", cfg.sport);
+      window.NT.storage.setConfig("f1cfg", cfg.f1);
       window.NT.refresh();
     }
     async function refreshAll() { await loadData(); render(); }
@@ -2756,6 +2822,14 @@
           options: [{ v: "auto", t: t("sport.mode.auto") }, { v: "manual", t: t("sport.mode.manual") }],
           onChange: (v) => { cfg.sport.mode = v; saveCfg(); render(); } });
       }
+      // F1 (toggle indépendant + pilote suivi optionnel)
+      fields.push({ type: "toggle", label: LANG === "fr" ? "Formule 1" : "Formula 1", value: f1On(),
+        onChange: (v) => { cfg.sports = v ? Array.from(new Set(cfg.sports.concat("f1"))) : cfg.sports.filter((s) => s !== "f1"); saveCfg(); refreshAll(); openSettings(); } });
+      if (f1On() && f1drv.length) {
+        fields.push({ type: "select", label: LANG === "fr" ? "Pilote suivi (surligné)" : "Followed driver", value: cfg.f1.driver || "",
+          options: [{ v: "", t: t("sport.pick") }].concat(f1drv.map((s) => ({ v: s.Driver.driverId, t: s.Driver.givenName + " " + s.Driver.familyName }))),
+          onChange: (id) => { cfg.f1.driver = id || null; saveCfg(); render(); } });
+      }
       Settings.open(t("card.sport"), fields);
     }
     if (gear) gear.addEventListener("click", openSettings);
@@ -2767,6 +2841,7 @@
         cfg.follows = (await NT.storage.getConfig("follows", { football: [] })) || { football: [] };
         if (!cfg.follows.football) cfg.follows.football = [];
         cfg.sport = Object.assign({ rotate: 60, mode: "auto" }, (await NT.storage.getConfig("sportCfg", {})) || {});
+        cfg.f1 = Object.assign({ driver: null }, (await NT.storage.getConfig("f1cfg", {})) || {});
         await loadData(); lastLoad = Date.now();
         render();
         NT.storage.onCacheChanged((key) => { if (key.indexOf("sport:") === 0 && Date.now() - lastLoad > 3000) { lastLoad = Date.now(); refreshAll(); } });

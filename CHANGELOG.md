@@ -3,6 +3,12 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.6.0] — 2026-06-22 — Formule 1 dans le widget Sport
+- **F1** (Jolpica/Ergast, sans clé) : activable dans ⚙. Compact = prochain GP + **prochaine séance en heure de Paris** + compte à rebours + leader.
+- **Vue plein écran F1** : championnat **pilotes** + **constructeurs** (top 12) + **calendrier** (séances EL/Quali/Sprint/Course en heure de Paris).
+- **Pilote suivi** optionnel → surligné dans le championnat pilotes.
+- Bridge `f1Schedule`/`f1Standings` (cache 6 h). Fix : les suivis football n'apparaissent plus quand le sport football est désactivé.
+
 ## [0.5.0] — 2026-06-22 — Suivi d'équipe (§4.2) + rotation + For You
 - **Suivre une équipe précise** (en plus des ligues) via réglages ⚙ : choisir une ligue → choisir l'équipe (autocomplétion via football-data, proxy `/competitions/{id}/teams`).
 - **Compact §4.2** : pour une équipe suivie, mini-classement (équipe surlignée + voisins + top2/bottom2 : Rang, Club, MJ, DB, Pts) + match pertinent.
