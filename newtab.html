@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nouvel onglet</title>
+<!-- Fonts embedded locally (../fonts via @font-face in newtab.css). No remote font links. -->
+<link rel="stylesheet" href="css/newtab.css">
+</head>
+<body>
+<main class="wrap">
+
+  <button type="button" class="gear page-gear" id="pageGear" data-i18n-al="aria.settings" aria-label="Paramètres"></button>
+
+  <!-- ===================== HERO ===================== -->
+  <header class="hero">
+    <div>
+      <p class="greeting"><span id="greet">Bonsoir</span></p>
+      <div class="clock tnum">
+        <span id="hm">--:--</span><span class="sec" id="sec">00</span>
+      </div>
+      <p class="date" id="date">—</p>
+    </div>
+
+    <div class="zones" id="zones">
+      <!-- timezone cards injected -->
+    </div>
+  </header>
+
+  <!-- ===================== SEARCH ===================== -->
+  <form class="search" id="searchForm" role="search" autocomplete="off" style="height: 42px; padding: 7px 7px 7px 14px">
+    <svg class="glass" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.7"></circle>
+      <path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+    </svg>
+    <input id="q" type="text" placeholder="Rechercher sur le web…" data-i18n-ph="search.ph" aria-label="Recherche" data-i18n-al="aria.search">
+    <div class="seg" role="group" aria-label="Moteur de recherche" data-i18n-al="aria.engine" style="height: 32px">
+      <button type="button" data-engine="google" aria-pressed="true" style="text-align: left; padding: 2px 12px 1px">Google</button>
+      <button type="button" data-engine="gemini" aria-pressed="false" style="padding: 2px 12px 1px">Gemini</button>
+      <button type="button" data-engine="claude" aria-pressed="false" style="padding: 2px 12px 1px">Claude</button>
+    </div>
+  </form>
+
+  <!-- ===================== BENTO ===================== -->
+  <div class="bento">
+
+    <!-- ===== RANGÉE 1 : Raccourcis (réduit) · IA · Homelab (résumé compact) ===== -->
+    <section class="card soft col8" style="padding: 16px 16px 14px; height: 208px">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title" data-i18n="card.shortcuts">Raccourcis</span>
+        <span class="head-right"></span>
+      </div>
+      <div class="grid-sc" id="shortcuts"></div>
+    </section>
+
+    <!-- IA RAPIDE -->
+    <section class="card soft col2" style="padding: 12px; height: 208px">
+      <div class="ai-mini" id="aiMini" style="text-align: center"></div>
+    </section>
+
+    <!-- HOMELAB (résumé CPU/RAM/Disque, format box IA) -->
+    <section class="card soft col2" id="homelabCard" style="padding: 12px 13px; height: 208px">
+      <div class="card-head" style="height: 20px; margin-bottom: 12px">
+        <span class="card-title" id="homelabTitle">Cet ordinateur</span>
+        <span class="head-right"></span>
+      </div>
+      <div id="homelab"></div>
+    </section>
+
+    <!-- ===== RANGÉE 2 : Météo · Bourse · Gmail · Récemment (même hauteur) ===== -->
+    <section class="card col3 eqh" style="padding: 16px 16px 12px">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title" data-i18n="card.weather">Météo</span>
+        <span class="head-right"><span class="meta" id="wxLoc"></span></span>
+      </div>
+      <div class="wx-now">
+        <div>
+          <div class="wx-temp tnum" id="wxTemp">--°</div>
+          <div class="wx-cond" id="wxCond"></div>
+          <div class="wx-sub" id="wxSub"></div>
+        </div>
+        <div><div class="wx-glyph" id="wxGlyph" style="width: 72px; height: 72px"></div></div>
+      </div>
+      <div class="wx-days" id="wxDays"></div>
+    </section>
+
+    <section class="card col3 eqh" style="padding: 16px 16px 12px">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title" data-i18n="card.stocks">Bourse</span>
+        <span class="head-right"><span class="meta" id="stkMeta"></span></span>
+      </div>
+      <div id="stocks"></div>
+    </section>
+
+    <section class="card col3 eqh" id="gmailCard">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title">Gmail</span>
+        <span class="head-right"></span>
+      </div>
+      <div id="gmail"></div>
+    </section>
+
+    <section class="card col3 eqh" style="padding: 16px 16px 12px">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title" data-i18n="card.recent">Récemment consultées</span>
+        <span class="head-right"></span>
+      </div>
+      <div id="recent"></div>
+    </section>
+
+    <!-- ===== RANGÉE 3 : Agenda + Actualités (même hauteur) ===== -->
+    <section class="card col8 eqh" id="agendaCard">
+      <div class="card-head">
+        <span class="card-title" data-i18n="card.agenda">Agenda</span>
+        <span class="head-right">
+          <button type="button" class="gear cal-nav" data-cal="-1" data-i18n-al="aria.prevMonth" aria-label="Mois précédent">‹</button>
+          <span class="meta cal-month" id="calMonth">—</span>
+          <button type="button" class="gear cal-nav" data-cal="1" data-i18n-al="aria.nextMonth" aria-label="Mois suivant">›</button>
+        </span>
+      </div>
+      <div class="cal-weekdays" id="calWeekdays">
+        <span data-i18n="wd.mon">Lun</span><span data-i18n="wd.tue">Mar</span><span data-i18n="wd.wed">Mer</span><span data-i18n="wd.thu">Jeu</span><span data-i18n="wd.fri">Ven</span><span data-i18n="wd.sat">Sam</span><span data-i18n="wd.sun">Dim</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </section>
+
+    <section class="card col4 eqh" style="padding: 16px 16px 12px">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title" data-i18n="card.news">Actualités</span>
+        <span class="head-right"></span>
+      </div>
+      <div id="news"></div>
+    </section>
+
+    <!-- ===== RANGÉE 4 : CS2 · F1 · Statut sites web (pleine largeur) ===== -->
+    <section class="card col4" id="cs2Card">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title">CS2 · Premier</span>
+        <span class="head-right"><span class="meta" id="cs2Name"></span></span>
+      </div>
+      <div id="cs2"></div>
+    </section>
+
+    <section class="card col4" id="f1Card">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title" data-i18n="card.f1">Formule 1</span>
+        <span class="head-right"><span class="meta" id="f1Meta"></span></span>
+      </div>
+      <div id="f1"></div>
+    </section>
+
+    <section class="card col4" id="sitesCard">
+      <div class="card-head" style="height: 24px">
+        <span class="card-title" data-i18n="card.sites">Sites web</span>
+        <span class="head-right"></span>
+      </div>
+      <div id="sites"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- modal d'ajout de raccourci -->
+<div class="modal" id="scModal" role="dialog" aria-modal="true" aria-labelledby="scModalTitle">
+  <div class="modal-card">
+    <h3 id="scModalTitle" data-i18n="modal.sc.title">Nouveau raccourci</h3>
+    <label for="scName" data-i18n="modal.sc.name">Nom</label>
+    <input type="text" id="scName" placeholder="GitHub" autocomplete="off">
+    <label for="scUrl" data-i18n="modal.sc.addr">Adresse</label>
+    <input type="text" id="scUrl" placeholder="https://github.com" autocomplete="off">
+    <label for="scFolder" data-i18n="modal.sc.folder">Dossier</label>
+    <select id="scFolder" class="cfg-select" style="width:100%"></select>
+    <div id="scFolderNewRow" style="display:none">
+      <label for="scFolderNew" data-i18n="modal.sc.folderNew">Nom du nouveau dossier</label>
+      <input type="text" id="scFolderNew" placeholder="Travail, Perso…" data-i18n-ph="modal.sc.folderNewPh" autocomplete="off">
+    </div>
+    <label data-i18n="modal.sc.icon">Icône</label>
+    <div class="sc-icon-row">
+      <span class="sc-icon-prev" id="scIconPrev"></span>
+      <div class="seg sc-icon-seg" id="scIconSeg" role="group" aria-label="Type d'icône" data-i18n-al="aria.iconType">
+        <button type="button" data-im="auto" aria-pressed="true" data-i18n="modal.sc.auto">Auto</button>
+        <button type="button" data-im="emoji" aria-pressed="false" data-i18n="modal.sc.emoji">Emoji</button>
+        <button type="button" data-im="url" aria-pressed="false" data-i18n="modal.sc.image">Image</button>
+      </div>
+    </div>
+    <div class="sc-emoji" id="scEmoji" style="display:none">
+      <div class="sc-emoji-cats" id="scEmojiCats"></div>
+      <div class="sc-emoji-grid" id="scEmojiGrid"></div>
+    </div>
+    <div id="scIconUrlRow" style="display:none">
+      <input type="text" id="scIconUrl" placeholder="https://…/mon-icone.png" data-i18n-ph="modal.sc.iconUrlPh" autocomplete="off">
+    </div>
+    <div class="modal-row">
+      <span class="meta" data-i18n="modal.sc.faviconHint">Par défaut, le logo du site (favicon) est récupéré automatiquement.</span>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="scCancel" data-i18n="common.cancel">Annuler</button>
+      <button type="button" class="btn primary" id="scSave" data-i18n="common.add">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- modal d'ajout d'une valeur boursière -->
+<div class="modal" id="stkModal" role="dialog" aria-modal="true" aria-labelledby="stkModalTitle">
+  <div class="modal-card">
+    <h3 id="stkModalTitle" data-i18n="modal.stk.title">Ajouter une valeur</h3>
+    <label for="stkSym" data-i18n="modal.stk.sym">Symbole Yahoo Finance</label>
+    <input type="text" id="stkSym" placeholder="^FCHI · AAPL · BTC-EUR · CW8.PA" autocomplete="off">
+    <label for="stkName" data-i18n="modal.stk.name">Nom affiché (optionnel)</label>
+    <input type="text" id="stkName" placeholder="CAC 40" autocomplete="off">
+    <div class="modal-row">
+      <span class="meta" data-i18n="modal.stk.hint">Le symbole est celui de finance.yahoo.com (ex. AAPL, ^GSPC, ETH-EUR, ESE.PA).</span>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="stkCancel" data-i18n="common.cancel">Annuler</button>
+      <button type="button" class="btn primary" id="stkSave" data-i18n="common.add">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/newtab.js"></script>
+</body>
+</html>

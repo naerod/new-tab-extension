@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "Nouvel onglet",
+  "version": "1.0.0",
+  "description": "Page Nouvel onglet — horloge, météo, bourse, actualités, Google Agenda, raccourcis et IA. Design Claude.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvpIDbMl7v/NsgNCN6dngwQAPThBb+TkbFxZV3sACGIi3nNY+y9q5GA99P3qC0o8QW3xEFj8T8NL1d3R872VJhrifcqZolnASR8ZmHYMLc7zMpC2GwD0GBDwj3Uvpx8qpsUrS+Inf8nZBV4Ir/ByVJWtF3IyU0+CBFUJGvwnMjqfiJIT6UzkU28T5CDrikteoLGyqHhFhcyRhptN0r5I23iAMiQ/MU5YMyLOkaWCHQ60aGBbBTNR9rjoiqiuACLsS8AyN3RerxCNZWsSgmi7frLVZJv0Ew1jBiFrVHDBU0ZZfEshl3Qf2rFxLHdqoDsAhJiUJHzkePnM9osCa5zPzSQIDAQAB",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "permissions": [
+    "history",
+    "storage",
+    "favicon",
+    "identity",
+    "geolocation",
+    "system.cpu",
+    "system.memory",
+    "system.storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "host_permissions": [
+    "https://news.google.com/*",
+    "https://api.open-meteo.com/*",
+    "https://geocoding-api.open-meteo.com/*",
+    "https://gemini.google.com/*",
+    "https://query1.finance.yahoo.com/*",
+    "https://query2.finance.yahoo.com/*",
+    "https://www.googleapis.com/*",
+    "https://api.jolpi.ca/*",
+    "https://naerod.com/*"
+  ],
+  "oauth2": {
+    "client_id": "55984010336-ojm0bs9hk9201ipos9flhdolitt8qllp.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/gmail.readonly"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://gemini.google.com/*"
+      ],
+      "js": [
+        "js/gemini-inject.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
