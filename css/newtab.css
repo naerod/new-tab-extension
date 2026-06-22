@@ -1298,3 +1298,12 @@ html[data-theme="light"] .sv-league{ background:var(--card); border-color:rgba(2
 .gl-score{ display:flex; align-items:center; gap:18px; font-size:30px; font-weight:600; color:var(--ink); }
 .gl-score b{ font-size:34px; color:var(--ink); }
 .gl-team{ font-size:22px; color:var(--ink-2); }
+
+/* Sport view — section header with notification bell (§4.6) */
+.sv-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+.sv-head h3{ margin-bottom:0; }
+.sv-bell{ width:30px; height:30px; flex:none; display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink-3); cursor:pointer; transition:.15s; }
+.sv-bell:hover{ color:var(--ink); border-color:var(--accent-line); }
+.sv-bell.on{ color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
+.sv-bell svg{ width:16px; height:16px; }

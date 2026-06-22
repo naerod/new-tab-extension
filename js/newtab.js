@@ -2636,7 +2636,7 @@
           + sessions.map((s) => '<div class="f1-srow"><span>' + escHtml(s.label) + '</span><span class="f1-when">' + escHtml(parisFmt.format(s.when)) + '</span></div>').join("") + '</div>';
       }).join("");
       const tbl = (head, body) => '<div class="sv-table-wrap"><table class="sv-table tnum"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
-      return '<div class="sv-league"><h3>' + (LANG === "fr" ? "Formule 1" : "Formula 1") + '</h3>'
+      return '<div class="sv-league">' + svHead((LANG === "fr" ? "Formule 1" : "Formula 1"), "F1")
         + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Championnat pilotes" : "Drivers' championship") + '</div>'
         + tbl('<tr><th>#</th><th class="l">' + (LANG === "fr" ? "Pilote" : "Driver") + '</th><th class="l">' + (LANG === "fr" ? "Écurie" : "Team") + '</th><th>Pts</th><th>V</th></tr>', drvRows) + '</div>'
         + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Championnat constructeurs" : "Constructors' championship") + '</div>'
@@ -2781,6 +2781,25 @@
       window.__ntHeadline = live ? { home: live.home, away: live.away, minute: live.minute, comp: live.competition } : null;
     }
 
+    // §4.6 — cloche de notifications par entité (off par défaut)
+    function bellBtn(key) {
+      const on = !!(cfg.notif && cfg.notif[key]);
+      return '<button type="button" class="sv-bell' + (on ? " on" : "") + '" data-nk="' + key + '" aria-label="Notifications" title="Notifications">'
+        + '<svg viewBox="0 0 24 24" fill="' + (on ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>';
+    }
+    function svHead(titleHtml, key) { return '<div class="sv-head"><h3>' + titleHtml + '</h3>' + bellBtn(key) + '</div>'; }
+    function toggleBell(key, btn) {
+      cfg.notif = cfg.notif || {};
+      const enabling = !cfg.notif[key];
+      const apply = (granted) => {
+        if (enabling && granted !== false) cfg.notif[key] = true; else delete cfg.notif[key];
+        if (window.NT) { window.NT.storage.setConfig("notif", cfg.notif); window.NT.refresh(); }
+        if (btn) { const on = !!cfg.notif[key]; btn.classList.toggle("on", on); const svg = btn.querySelector("svg"); if (svg) svg.setAttribute("fill", on ? "currentColor" : "none"); }
+      };
+      if (enabling && hasChrome && chrome.permissions) chrome.permissions.request({ permissions: ["notifications"] }, (g) => apply(g));
+      else apply(true);
+    }
+
     function teamSection(f) {
       const ms = (teamMx[f.id] || []).slice().sort((a, b) => ts(a.utcDate) - ts(b.utcDate));
       const now = Date.now();
@@ -2788,7 +2807,7 @@
       const up = ms.filter((m) => m.status === "scheduled" && ts(m.utcDate) > now).slice(0, 5);
       const fin = ms.filter((m) => m.status === "finished").reverse().slice(0, 5);
       const grp = (label, arr, kind) => arr.length ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
-      return '<div class="sv-league"><h3>' + escHtml(f.name || "") + ' <span class="sv-sub">' + escHtml(nameOf(f.comp)) + '</span></h3>'
+      return '<div class="sv-league">' + svHead(escHtml(f.name || "") + ' <span class="sv-sub">' + escHtml(nameOf(f.comp)) + '</span>', "T:" + f.id)
         + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last")
         + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Classement" : "Standings") + '</div>' + standingsTable(standings[f.comp], f.id) + '</div></div>';
     }
@@ -2799,7 +2818,7 @@
       const up = matches.filter((m) => m.status === "scheduled" && ts(m.utcDate) > now);
       const fin = matches.filter((m) => m.status === "finished").reverse();
       const grp = (label, arr, kind) => arr.length ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
-      return '<div class="sv-league"><h3>' + escHtml(nameOf(f.comp)) + '</h3>'
+      return '<div class="sv-league">' + svHead(escHtml(nameOf(f.comp)), "L:" + f.comp)
         + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last")
         + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Classement" : "Standings") + '</div>' + standingsTable(standings[f.comp]) + '</div></div>';
     }
@@ -2810,14 +2829,16 @@
       const up = matches.filter((m) => m.status === "scheduled" && ts(m.utcDate) > now);
       const fin = matches.filter((m) => m.status === "finished").reverse();
       const grp = (label, arr, kind) => arr.length ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
-      return '<div class="sv-league"><h3>' + escHtml(basketNameOf(f.comp)) + '</h3>'
+      return '<div class="sv-league">' + svHead(escHtml(basketNameOf(f.comp)), "B:" + f.comp)
         + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last") + '</div>';
     }
     function openView() {
       let sections = (footballOn() ? orderedFollows().map((f) => f.type === "team" ? teamSection(f) : leagueSection(f)).join("") : "");
       if (basketOn()) sections += basketFollows().map(basketSection).join("");
       if (f1On()) sections += f1Section();
-      Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'));
+      Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'), (body) => {
+        body.querySelectorAll(".sv-bell").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); toggleBell(b.dataset.nk, b); }));
+      });
     }
 
     function saveCfg() {
@@ -2899,6 +2920,7 @@
         if (!cfg.follows.basketball) cfg.follows.basketball = [];
         cfg.sport = Object.assign({ rotate: 60, mode: "auto" }, (await NT.storage.getConfig("sportCfg", {})) || {});
         cfg.f1 = Object.assign({ driver: null }, (await NT.storage.getConfig("f1cfg", {})) || {});
+        cfg.notif = (await NT.storage.getConfig("notif", {})) || {};
         await loadData(); lastLoad = Date.now();
         render();
         NT.storage.onCacheChanged((key) => { if (key.indexOf("sport:") === 0 && Date.now() - lastLoad > 3000) { lastLoad = Date.now(); refreshAll(); } });
