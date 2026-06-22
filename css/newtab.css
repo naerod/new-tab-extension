@@ -1267,4 +1267,4 @@ html[data-theme="light"] .sv-league{ background:var(--card); border-color:rgba(2
 }
 .detail-host .card.expanded .card-head{ margin-bottom:18px; }
 .detail-host .card.expanded .card-title{ font-size:20px; }
-.card-placeholder{ border:1px dashed var(--line-2); border-radius:var(--r); opacity:.4; }
+.card-placeholder{ visibility:hidden; }   /* réserve la cellule de grille, sans boîte visible */

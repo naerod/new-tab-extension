@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.4.1] — 2026-06-22 — Corrections pop-up widgets
+- **Widget entièrement cliquable** : la liste d'exclusion est réduite aux vrais contrôles (`a, button, input, select, textarea`) — fini les « quelques pixels cliquables » / double-clic.
+- **Plus de réalignement de l'arrière-plan** : le placeholder reprend la classe de colonne (`col*`) et la hauteur du widget → il réserve exactement sa cellule de grille, invisible ; les autres widgets restent statiques.
+
 ## [0.4.0] — 2026-06-22 — Pop-up détaillée pour TOUS les widgets
 - **Clic sur n'importe quel widget → grande pop-up** (sauf l'**agenda**, déjà grand, et le **sport** qui garde sa vue dédiée plus riche).
 - Mécanisme générique `Detail` : on déplace le **vrai widget** dans la pop-up (données live, réglages ⚙, pagination conservés) puis on le remet en place à la fermeture.

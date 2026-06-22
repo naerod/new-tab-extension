@@ -2459,7 +2459,9 @@
         + '<button type="button" class="view-close gear" aria-label="' + closeLbl + '">' + SVGI.close + '</button>'
         + '<div class="detail-host"></div></div>';
       placeholder = document.createElement("div");
-      placeholder.className = "card-placeholder";
+      // keep the SAME grid cell (col span + height) so the other widgets don't reflow
+      const colCls = [].slice.call(card.classList).filter((c) => /^col\d+$/.test(c));
+      placeholder.className = "card-placeholder " + colCls.join(" ");
       placeholder.style.height = card.offsetHeight + "px";
       card.parentNode.insertBefore(placeholder, card);
       layer.querySelector(".detail-host").appendChild(card);
@@ -2480,7 +2482,8 @@
       document.body.classList.remove("in-view");
       if (layer) layer.innerHTML = "";
     }
-    const IGNORE = "a,button,input,select,textarea,label,.gear,.pg-arrow,.seg,.sc,.fb-item,.ai-mini a,.cfg-ac,.chip,.stk-addrow";
+    // ignore ONLY real interactive controls; the whole rest of the widget is clickable
+    const IGNORE = "a,button,input,select,textarea";
     function attach(card) {
       if (!card) return;
       card.classList.add("expandable");
