@@ -316,12 +316,11 @@
     --ink-3:#8b8678;      /* tertiary / labels */
     --ink-4:#5e5a50;      /* faint */
 
-    /* Single accent — Claude coral, used sparingly */
-    /* Single accent hue = indigo (brief §0.3). Green/red reserved for indicators. */
-    --accent:#7b83ff;
-    --accent-soft:rgba(123,131,255,.16);
-    --accent-line:rgba(123,131,255,.5);
-    --on-accent:#13151b;              /* text/icon over accent fills */
+    /* Single accent — Claude coral (orange), used sparingly. Green/red reserved for indicators. */
+    --accent:#d97757;
+    --accent-soft:rgba(217,119,87,.15);
+    --accent-line:rgba(217,119,87,.45);
+    --on-accent:#17191a;              /* text/icon over accent fills */
     /* Search bar accent — recomputed per selected engine (§3.6); defaults to accent */
     --search-accent:var(--accent);
     --search-accent-line:var(--accent-line);
@@ -339,32 +338,61 @@
     --mono:'Google Sans Code',ui-monospace,'SF Mono',Menlo,monospace;
   }
 
-  /* ===== Thème clair (warm paper) — bascule via html[data-theme="light"] ===== */
+  /* ===== Thème clair — surfaces blanches sur fond crème, contraste AA ===== */
   html[data-theme="light"]{
-    --bg:#f5f3ec;
-    --bg-2:#ece9df;
-    --card:#fdfcf8;
-    --card-2:#f6f4ec;
-    --hover:#eceadf;
-    --line:rgba(40,36,28,.10);
-    --line-2:rgba(40,36,28,.17);
+    --bg:#f3f1ec;          /* warm light grey page */
+    --bg-2:#e9e6df;        /* recessed (seg, inputs) */
+    --card:#ffffff;        /* crisp white cards that lift off the page */
+    --card-2:#ffffff;      /* flat (kills the muddy gradient) */
+    --hover:#f1efe9;
+    --line:rgba(28,26,22,.10);
+    --line-2:rgba(28,26,22,.16);
 
-    --ink:#2a2720;
-    --ink-2:#5b554a;
-    --ink-3:#86806f;
-    --ink-4:#aaa395;
+    --ink:#1c1b18;         /* near-black, strong */
+    --ink-2:#57534b;
+    --ink-3:#857f74;
+    --ink-4:#aaa49a;
 
-    --accent:#4f55d6;
-    --accent-soft:rgba(79,85,214,.12);
-    --accent-line:rgba(79,85,214,.42);
+    --accent:#c2552f;      /* deeper coral for contrast on white */
+    --accent-soft:rgba(194,85,47,.10);
+    --accent-line:rgba(194,85,47,.40);
     --on-accent:#ffffff;
 
     --up:#1f9d6b;
     --down:#d65656;
   }
   html[data-theme="light"] body{
-    background-image:radial-gradient(1200px 760px at 80% -10%, rgba(199,95,60,.06), transparent 62%);
+    background-image:radial-gradient(1100px 720px at 82% -12%, rgba(217,119,87,.07), transparent 60%);
   }
+  /* Modern depth: white cards get a soft shadow instead of a flat border */
+  html[data-theme="light"] .card{
+    border-color:rgba(28,26,22,.06);
+    box-shadow:0 1px 2px rgba(28,26,22,.04), 0 4px 12px rgba(28,26,22,.05);
+  }
+  /* Soft tile panels (raccourcis / IA) need a real light surface, not the
+     dark-theme translucent overlay */
+  html[data-theme="light"] .card.soft{
+    background:#faf9f6;
+    border-color:rgba(28,26,22,.07);
+    box-shadow:none;
+  }
+  html[data-theme="light"] .seg,
+  html[data-theme="light"] .search input,
+  html[data-theme="light"] .modal-card input[type=text]{ color:var(--ink); }
+  /* IA tiles + folder tiles: real light surfaces (the dark-theme overlays vanish on white) */
+  html[data-theme="light"] .ai-mini a,
+  html[data-theme="light"] .ai-tile,
+  html[data-theme="light"] .ai-mini .ai-gear,
+  html[data-theme="light"] .sc.folder .tile{
+    background:#f1efe9; border-color:rgba(28,26,22,.10);
+  }
+  html[data-theme="light"] .ai-mini a.bare{ background:transparent; border:0; }
+  html[data-theme="light"] .seg button[data-engine="google"][aria-pressed="true"]{
+    background:#ffffff; box-shadow:0 1px 2px rgba(28,26,22,.10);
+  }
+  /* Soften the heavy dark hover shadows for the light theme */
+  html[data-theme="light"] .ai-mini a:hover,
+  html[data-theme="light"] .ai-tile:hover{ box-shadow:0 4px 12px rgba(28,26,22,.12); }
 
   *{box-sizing:border-box;margin:0;padding:0}
 

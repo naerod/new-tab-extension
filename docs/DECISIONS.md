@@ -29,10 +29,16 @@ Format : décision · contexte · choix · conséquences.
 - **Choix** : `js/sw.js` (module) déclaré `background.service_worker` ; `chrome.alarms` pour le polling ; écriture cache ; newtab cache-first + `storage.onChanged`.
 - **Conséquences** : ajout permission `alarms` au manifest ; OAuth (`chrome.identity`) reste utilisable depuis le SW.
 
-## ADR-006 — Accent global = indigo (tranché par Dorian 2026-06-22)
-- **Contexte** : brief §0.3 impose indigo unique ; l'existant ("Design Claude") utilisait orange `#d97757` partout.
-- **Choix** : **indigo** (suivre le brief). Dark : `--accent:#7b83ff` ; Light : `--accent:#4f55d6`. `--on-accent` = `#13151b` (dark) / `#fff` (light) pour le texte sur aplats d'accent. L'orange `#d97757` est **réservé** à l'accent du moteur de recherche Claude (§3.6).
-- **Conséquences** : toutes les surfaces d'accent passent par `var(--accent*)` → bascule globale faite en une fois. Une passe WCAG AA reste à valider sur le dark (texte blanc/dark sur indigo des boutons primaires = AA large, OK ; à confirmer visuellement).
+## ADR-006 — Accent global = orange Claude (révisé par Dorian 2026-06-22)
+- **Contexte** : le brief §0.3 imposait indigo unique. Indigo a d'abord été appliqué (v pré-0.1.0) ; après essai en conditions réelles, **Dorian préfère l'orange Claude d'origine** et demande le retour.
+- **Choix** : **orange Claude** (préférence du pilote, prime sur le brief). Dark `--accent:#d97757` ; Light `--accent:#c2552f` (coral plus profond pour le contraste sur blanc). `--on-accent` = `#17191a` (dark) / `#fff` (light). L'accent recherche §3.6 reste par moteur (Google gris / Gemini bleu / Claude orange).
+- **Écart au brief assumé** : §0.3 (indigo) non suivi, sur décision explicite de Dorian.
+- **Conséquences** : surfaces d'accent inchangées (tout via `var(--accent*)`), bascule en une fois.
+
+## ADR-008 — Versioning sémantique de dev + tags git (2026-06-22)
+- **Contexte** : Dorian veut un vrai versioning et pouvoir revenir à une version par son numéro.
+- **Choix** : **SemVer en phase dev → `0.MINOR.PATCH`**. Baseline = **0.1.0**. `MINOR` = nouvelle fonctionnalité / évolution notable ; `PATCH` = correctif/ajustement. Chaque version est **taguée dans git** (`vX.Y.Z`) → revenir en arrière = `git checkout vX.Y.Z`. `manifest.json` et `package.json` portent le même numéro. Passage en `1.0.0` réservé à la première publication Store.
+- **Conséquences** : git conserve l'historique complet (chaque commit = état complet) ; les tags donnent des points de retour nommés. Le `CHANGELOG.md` mappe version → contenu.
 
 ## ADR-007 — Clés API providers : proxy serveur (tranché par Dorian 2026-06-22)
 - **Contexte** : football-data.org exige un token ; une clé embarquée dans une extension publiée est visible de tous. Brief §3.3/§6.
