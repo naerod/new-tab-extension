@@ -2,4 +2,5 @@ node_modules/
 *.zip
 .DS_Store
 docs/secrets*
+docs/shots/
 _backend/.env

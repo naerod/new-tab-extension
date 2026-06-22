@@ -19,6 +19,21 @@
 npm test          # node --test tests/*.test.js — couches storage, providers, entitlements
 ```
 
+## Aperçu visuel headless (Claude voit son rendu)
+L'extension tourne dans un **Chromium headless** (sous xvfb) sur CT102, chargée comme vraie extension → les `chrome.*` et le service worker fonctionnent. Capture d'écran PNG lue ensuite par Claude.
+
+Pré-requis (déjà installés sur CT102) : `chromium`, `xvfb`, `fonts-liberation`, et `playwright-core` (devDependency).
+
+```
+bash tools/shot.sh dark 1        # thème sombre, config sport pré-remplie -> docs/shots/newtab-dark.png
+bash tools/shot.sh light 1       # thème clair
+# vue plein écran d'un widget (clic) :
+xvfb-run -a node tools/shot.mjs --theme=dark --seed=1 --click="#sport" --out=docs/shots/sport-view.png
+```
+Options `tools/shot.mjs` : `--theme=dark|light`, `--seed=0|1` (pré-remplit football + ligues), `--click=<sélecteur>` (ouvre une vue), `--out=<chemin>`.
+
+Limites : profil Chrome **vierge** (pas de connexion Google → Gmail/Agenda en état vide, pas d'historique ni config synchronisée réelle). Suffisant pour valider mise en page, thèmes, widgets data-driven (sport, météo, bourse, actus). Les PNG (`docs/shots/`) sont régénérables et **non versionnés**.
+
 ## Secrets / clés API (ADR-007 — proxy serveur)
 - Aucune clé n'est embarquée dans l'extension.
 - Les sources à clé (football-data.org) passent par le **proxy `naerod-api`** (CT110, `/opt/apps/naerod-api/server.js`), exposé via `https://naerod.com/api/...`.

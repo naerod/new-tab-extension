@@ -6,5 +6,8 @@
   "description": "Chrome MV3 new tab extension — dev/test tooling only (not shipped).",
   "scripts": {
     "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.61.0"
   }
 }
