@@ -72,6 +72,8 @@
       "ob.google.sub": "Connecte-toi pour afficher ton Agenda Google et tes mails Gmail (lecture seule). Tu peux aussi le faire plus tard.",
       "ob.google.btn": "Connecter Google", "ob.google.connecting": "Connexion…", "ob.google.ok": "✓ Connecté", "ob.google.retry": "Réessayer",
       "ob.widgets.title": "Tes widgets", "ob.widgets.sub": "Active ce que tu veux voir. Modifiable à tout moment via la roue ⚙ en haut à droite.",
+      "ob.sports.title": "Quels sports suis-tu ?", "ob.sports.sub": "Coche tes sports — le widget Sport s'adapte. Tu pourras suivre une équipe précise dans les réglages.",
+      "ob.sports.leagues": "Ligues à suivre (football)",
       "ob.done.title": "Tout est prêt{name} !",
       "ob.done.sub": "Chaque carte a une roue ⚙ pour la personnaliser : Steam ID pour CS2, tes URL pour les Sites, ta watchlist pour la Bourse…",
       "ob.done.btn": "Lancer mon tableau de bord",
@@ -150,6 +152,8 @@
       "ob.google.sub": "Connect to show your Google Calendar and Gmail messages (read-only). You can also do it later.",
       "ob.google.btn": "Connect Google", "ob.google.connecting": "Connecting…", "ob.google.ok": "✓ Connected", "ob.google.retry": "Try again",
       "ob.widgets.title": "Your widgets", "ob.widgets.sub": "Turn on what you want to see. Change it anytime from the ⚙ gear at the top right.",
+      "ob.sports.title": "Which sports do you follow?", "ob.sports.sub": "Tick your sports — the Sport widget adapts. You can follow a specific team in settings.",
+      "ob.sports.leagues": "Leagues to follow (football)",
       "ob.done.title": "All set{name}!",
       "ob.done.sub": "Every card has a ⚙ gear to personalize it: Steam ID for CS2, your URLs for Websites, your watchlist for Markets…",
       "ob.done.btn": "Open my dashboard",
@@ -2976,18 +2980,52 @@
       });
       body.appendChild(grid);
     }
+    // §3.7 — choix des sports (multi-select) + sections dynamiques (ligues football)
+    function stepSports(body) {
+      body.appendChild(el("h2", "ob-title", t("ob.sports.title")));
+      body.appendChild(el("p", "ob-sub", t("ob.sports.sub")));
+      if (!state.sports) state.sports = [];
+      if (!state.leagues) state.leagues = [];
+      const SPORTS = [{ k: "football", t: t("sport.football") }, { k: "f1", t: (LANG === "fr" ? "Formule 1" : "Formula 1") }];
+      const grid = el("div", "ob-grid");
+      SPORTS.forEach((s) => {
+        const on = state.sports.indexOf(s.k) !== -1;
+        const lbl = el("label", "ob-chip" + (on ? " on" : ""));
+        const c = el("input"); c.type = "checkbox"; c.checked = on;
+        c.addEventListener("change", () => { if (c.checked) { if (state.sports.indexOf(s.k) === -1) state.sports.push(s.k); } else state.sports = state.sports.filter((x) => x !== s.k); render(); });
+        lbl.appendChild(c); lbl.appendChild(el("span", null, s.t)); grid.appendChild(lbl);
+      });
+      body.appendChild(grid);
+      if (state.sports.indexOf("football") !== -1) {
+        body.appendChild(el("p", "ob-sub ob-sub2", t("ob.sports.leagues")));
+        const leagues = (window.NT && window.NT.FOOTBALL_LEAGUES) || [];
+        const lg = el("div", "ob-grid");
+        leagues.forEach((l) => {
+          const on = state.leagues.indexOf(l.code) !== -1;
+          const lbl = el("label", "ob-chip" + (on ? " on" : ""));
+          const c = el("input"); c.type = "checkbox"; c.checked = on;
+          c.addEventListener("change", () => { if (c.checked) { if (state.leagues.indexOf(l.code) === -1) state.leagues.push(l.code); } else state.leagues = state.leagues.filter((x) => x !== l.code); lbl.classList.toggle("on", c.checked); });
+          lbl.appendChild(c); lbl.appendChild(el("span", null, l.name)); lg.appendChild(lbl);
+        });
+        body.appendChild(lg);
+      }
+    }
     function stepDone(body, nav) {
       body.appendChild(el("h2", "ob-title", t("ob.done.title", { name: state.name ? ", " + escHtml(state.name.trim()) : "" })));
       body.appendChild(el("p", "ob-sub", t("ob.done.sub")));
       nav.next.textContent = t("ob.done.btn");
     }
 
-    const STEPS = [stepWelcome, stepName, stepCity, stepGoogle, stepWidgets, stepDone];
+    const STEPS = [stepWelcome, stepName, stepCity, stepGoogle, stepWidgets, stepSports, stepDone];
 
     function finish() {
       if (state.name) CFG.set("user", "name", state.name.trim());
       if (state.place) { CFG.set("weather", "geo", false); CFG.set("weather", "place", { lat: state.place.lat, lon: state.place.lon, label: state.place.name }); }
       if (state.widgets) CFG.set("layout", "disabled", Layout.WIDGETS.filter((w) => !state.widgets[w.k]).map((w) => w.k));
+      if (window.NT) {
+        if (state.sports) window.NT.storage.setConfig("sports", state.sports);
+        if (state.leagues && state.leagues.length) window.NT.storage.setConfig("follows", { football: state.leagues.map((c) => ({ type: "league", comp: c })) });
+      }
       if (SYNC) dbSet({ onboarded: true }, () => location.reload());
       else location.reload();
     }

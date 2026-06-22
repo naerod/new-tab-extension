@@ -68,6 +68,14 @@ await page.evaluate(async ({ theme, seed }) => {
 await page.reload({ waitUntil: "domcontentloaded", timeout: 15000 });
 await page.waitForTimeout(3000); // let widgets fetch (ESPN/news/stocks) and the SW fill cache
 
+// optional: open the onboarding and advance N steps (verification)
+if (args.onboard != null) {
+  await page.evaluate(() => { window.Onboarding && window.Onboarding.start(); });
+  await page.waitForTimeout(400);
+  for (let i = 0; i < Number(args.onboard); i++) { await page.click(".ob-next").catch(() => {}); await page.waitForTimeout(350); }
+  await page.waitForTimeout(600);
+}
+
 // optional: click a selector (e.g. #sport) to open a full-screen view, then shoot
 if (args.click) {
   await page.click(args.click, { timeout: 5000 }).catch((e) => console.log("[shot] click failed:", e.message));

@@ -3,6 +3,9 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.8.0] — 2026-06-22 — Onboarding : étape Sports (§3.7)
+- Nouvelle étape d'onboarding **« Quels sports suis-tu ? »** : multi-select (Football, F1) avec **sections dynamiques** — cocher Football fait apparaître les **ligues à suivre**. Écrit la config sport (sports + ligues) lue par le widget. Suivi d'une équipe précise renvoyé aux réglages.
+
 ## [0.7.0] — 2026-06-22 — Barre « At a Glance » (§3.8)
 - La barre hero **alterne avec le score d'un match suivi EN DIRECT** (toutes les 8 s) : tag ● DIRECT + minute + score. Hors match live, salutation/heure/date normales.
 - Le widget Sport expose le match live courant (`window.__ntHeadline`) ; contrôleur `glance` dans le hero. (Vérifiable pendant un match en direct.)
