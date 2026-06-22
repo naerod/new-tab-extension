@@ -14,12 +14,16 @@
 
   <!-- ===================== HERO ===================== -->
   <header class="hero">
-    <div>
-      <p class="greeting"><span id="greet">Bonsoir</span></p>
-      <div class="clock tnum">
-        <span id="hm">--:--</span><span class="sec" id="sec">00</span>
+    <div class="hero-main">
+      <div class="hero-normal">
+        <p class="greeting"><span id="greet">Bonsoir</span></p>
+        <div class="clock tnum">
+          <span id="hm">--:--</span><span class="sec" id="sec">00</span>
+        </div>
+        <p class="date" id="date">—</p>
       </div>
-      <p class="date" id="date">—</p>
+      <!-- §3.8 At a Glance — live score of a followed match, alternated with the clock -->
+      <div class="hero-glance" id="glance" hidden></div>
     </div>
 
     <div class="zones" id="zones">

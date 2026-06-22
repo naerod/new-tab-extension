@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.7.0] — 2026-06-22 — Barre « At a Glance » (§3.8)
+- La barre hero **alterne avec le score d'un match suivi EN DIRECT** (toutes les 8 s) : tag ● DIRECT + minute + score. Hors match live, salutation/heure/date normales.
+- Le widget Sport expose le match live courant (`window.__ntHeadline`) ; contrôleur `glance` dans le hero. (Vérifiable pendant un match en direct.)
+
 ## [0.6.0] — 2026-06-22 — Formule 1 dans le widget Sport
 - **F1** (Jolpica/Ergast, sans clé) : activable dans ⚙. Compact = prochain GP + **prochaine séance en heure de Paris** + compte à rebours + leader.
 - **Vue plein écran F1** : championnat **pilotes** + **constructeurs** (top 12) + **calendrier** (séances EL/Quali/Sprint/Course en heure de Paris).

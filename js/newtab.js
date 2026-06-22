@@ -2749,6 +2749,17 @@
       if (meta) meta.textContent = keys.length + (LANG === "fr" ? (keys.length > 1 ? " suivis" : " suivi") : (keys.length > 1 ? " follows" : " follow"));
       pager.set(keys);
       startRotation();
+      computeHeadline();
+    }
+    // §3.8 — expose a LIVE followed match for the hero "At a Glance" slider
+    function computeHeadline() {
+      let cands = [];
+      if (footballOn()) {
+        leagueFollows().forEach((f) => { cands = cands.concat(boards[f.comp] || []); });
+        teamFollows().forEach((f) => { cands = cands.concat(teamMx[f.id] || []); });
+      }
+      const live = cands.find((m) => m.status === "live");
+      window.__ntHeadline = live ? { home: live.home, away: live.away, minute: live.minute, comp: live.competition } : null;
     }
 
     function teamSection(f) {
@@ -2848,6 +2859,30 @@
         setInterval(() => { lastLoad = Date.now(); refreshAll(); }, 90000);
       } catch (e) { console.warn("[sport]", e); render(); }
     });
+  })();
+
+  /* ============================================================
+     AT A GLANCE (§3.8) — la barre hero alterne avec le score d'un match suivi
+     EN DIRECT (exposé par le widget Sport via window.__ntHeadline).
+     ============================================================ */
+  (function glance() {
+    const g = $("#glance"); const normal = document.querySelector(".hero-normal");
+    if (!g || !normal) return;
+    let showing = "normal", tick = 0;
+    const nm = (s) => escHtml(s.team.shortName || s.team.name || "?");
+    function fmt(h) {
+      const sc = (h.home.score != null && h.away.score != null) ? (h.home.score + " – " + h.away.score) : "–";
+      return '<div class="gl-tag">● ' + (LANG === "fr" ? "DIRECT" : "LIVE") + (h.minute ? " " + h.minute + "'" : "") + '</div>'
+        + '<div class="gl-score"><span class="gl-team">' + nm(h.home) + '</span><b class="tnum">' + sc + '</b><span class="gl-team">' + nm(h.away) + '</span></div>';
+    }
+    function setMode(m) { if (m === showing) return; showing = m; normal.hidden = (m === "glance"); g.hidden = (m !== "glance"); }
+    setInterval(() => {
+      const h = window.__ntHeadline;
+      if (!h) { setMode("normal"); tick = 0; return; }
+      g.innerHTML = fmt(h);
+      tick++;
+      setMode(Math.floor(tick / 8) % 2 === 1 ? "glance" : "normal"); // 8s normal / 8s live
+    }, 1000);
   })();
 
   /* ============================================================
