@@ -37,12 +37,12 @@ Limites : profil Chrome **vierge** (pas de connexion Google → Gmail/Agenda en 
 ## Secrets / clés API (ADR-007 — proxy serveur)
 - Aucune clé n'est embarquée dans l'extension.
 - Les sources à clé (football-data.org) passent par le **proxy `naerod-api`** (CT110, `/opt/apps/naerod-api/server.js`), exposé via `https://naerod.com/api/...`.
-- Endpoints sport à ajouter au proxy (Phase B) :
+- Endpoints sport **déployés** sur le proxy (whitelist stricte, cache 5 min) :
   - `GET /api/football/competitions/{id}/standings`
   - `GET /api/football/competitions/{id}/matches`
   - `GET /api/football/teams/{id}/matches`
-  - → le proxy ajoute l'en-tête `X-Auth-Token: <FOOTBALL_DATA_TOKEN>` (variable d'env serveur, jamais committée) et relaie la réponse football-data v4 telle quelle.
-- Le token football-data est stocké côté serveur (`.env` CT110) + **Bitwarden**. Jamais dans le dépôt ni dans `chrome.storage`.
+  - → le proxy ajoute l'en-tête `X-Auth-Token: <FOOTBALL_DATA_TOKEN>` (variable d'env serveur, jamais committée) et relaie la réponse football-data v4 telle quelle. Sans token : `500 {"error":"FOOTBALL_DATA_TOKEN not configured"}` (route stable, pas de crash).
+- **Activer le token** : ajouter `FOOTBALL_DATA_TOKEN=<token>` dans `/opt/apps/naerod-api/.env` (CT110, chmod 600) puis `systemctl restart naerod-api`. Token aussi stocké dans **Bitwarden**. Jamais dans le dépôt ni dans `chrome.storage`.
 - Sources sans clé (ESPN, Jolpica/Ergast, OpenF1, Open-Meteo) : appelées en direct depuis le service worker.
 
 ## Architecture du polling (service worker)

@@ -11,6 +11,7 @@ const PVE_TOKENSECRET = process.env.PVE_TOKENSECRET;
 const HOMELAB_KEY = process.env.HOMELAB_KEY;       // garde l'endpoint /api/homelab (exposé publiquement)
 const FACEIT_KEY = process.env.FACEIT_KEY;         // Faceit Data API (server-side)
 const FACEIT_NICK = process.env.FACEIT_NICKNAME;
+const FOOTBALL_DATA_TOKEN = process.env.FOOTBALL_DATA_TOKEN; // football-data.org v4 (server-side, jamais embarqué)
 
 function fetchLeetify(steamId) {
   return new Promise((resolve, reject) => {
@@ -184,6 +185,38 @@ async function getLeetify(steamId) {
   return v;
 }
 
+// football-data.org v4 — proxy server-side (token jamais embarqué dans l'extension,
+// ADR-007). Passe-plat de la réponse v4 telle quelle ; cache agressif (limite
+// gratuite ~10 req/min). pathV4 = ex "competitions/PL/standings" + query éventuelle.
+function fetchFootballData(pathV4) {
+  return new Promise((resolve, reject) => {
+    if (!FOOTBALL_DATA_TOKEN) return reject(new Error('FOOTBALL_DATA_TOKEN not configured'));
+    const options = {
+      hostname: 'api.football-data.org',
+      path: '/v4/' + pathV4,
+      headers: { 'X-Auth-Token': FOOTBALL_DATA_TOKEN, 'Accept': 'application/json' },
+    };
+    https.get(options, (r) => {
+      let data = '';
+      r.on('data', (c) => data += c);
+      r.on('end', () => {
+        if (r.statusCode >= 400) return reject(new Error('football-data ' + r.statusCode));
+        try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+      });
+    }).on('error', reject);
+  });
+}
+const fdCache = {};
+const FD_TTL = 5 * 60 * 1000; // 5 min
+async function getFootballData(pathV4) {
+  const now = Date.now();
+  const c = fdCache[pathV4];
+  if (c && now - c.t < FD_TTL) return c.v;
+  const v = await fetchFootballData(pathV4);
+  fdCache[pathV4] = { v, t: now };
+  return v;
+}
+
 async function getHomelab() {
   const now = Date.now();
   if (!homelabCache || now - homelabTime > HOMELAB_TTL) {
@@ -241,6 +274,19 @@ const server = http.createServer(async (req, res) => {
       const data = await getFaceit(nick);
       res.writeHead(200);
       return res.end(JSON.stringify(data || { error: 'not found' }));
+    }
+    if (url.startsWith('/api/football/')) {
+      // endpoint ouvert (données publiques) ; la clé reste côté serveur.
+      const rest = url.slice('/api/football/'.length);
+      // whitelist stricte (pas d'open proxy) : competitions/<id>/(standings|matches) | teams/<id>/matches
+      if (!/^(competitions\/[A-Za-z0-9_-]+\/(standings|matches)|teams\/[0-9]+\/matches)$/.test(rest)) {
+        res.writeHead(400); return res.end('{"error":"bad path"}');
+      }
+      const q = (req.url.split('?')[1] || '');
+      const v4 = rest + (q ? '?' + q : '');
+      const data = await getFootballData(v4); // await BEFORE writeHead, sinon ERR_HTTP_HEADERS_SENT au catch
+      res.writeHead(200);
+      return res.end(JSON.stringify(data));
     }
     if (url === '/api/homelab' || url === '/api/sites') {
       const k = new URLSearchParams((req.url.split('?')[1] || '')).get('k');
