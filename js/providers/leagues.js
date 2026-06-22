@@ -27,3 +27,11 @@ export const BASKET_LEAGUES = [
 ];
 export const BASKET_TO_ESPN = Object.fromEntries(BASKET_LEAGUES.map((l) => [l.code, l.espn]));
 export const basketName = (code) => (BASKET_LEAGUES.find((l) => l.code === code) || {}).name || code;
+
+// Tennis — TheSportsDB tours (events only ; rankings/draw later). id = TheSportsDB idLeague.
+export const TENNIS_TOURS = [
+  { code: "ATP", name: "ATP", id: "4464" },
+  { code: "WTA", name: "WTA", id: "4517" },
+];
+export const tennisName = (code) => (TENNIS_TOURS.find((l) => l.code === code) || {}).name || code;
+export const tennisId = (code) => (TENNIS_TOURS.find((l) => l.code === code) || {}).id;

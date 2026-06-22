@@ -3,6 +3,13 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.11.0] — 2026-06-22 — Tennis (ATP / WTA, bornée)
+- **Tennis** activable dans ⚙ : suivre les circuits **ATP / WTA** (TheSportsDB, clé publique). Compact + vue = événements (live/à venir/récents). **Classements ATP/WTA et tableau (draw) différés** (non dispo en clé gratuite — §4.4 « contenu délégué »).
+
+## [0.10.0] — 2026-06-22 — Notifications par entité (§4.6)
+- **Cloche par entité** (ligue / équipe / basket / F1) dans la vue détaillée, **off par défaut**. Permission `notifications` demandée **à l'activation** (optionnelle).
+- Le **service worker** diffuse les notifs en comparant l'état des matchs à chaque cycle : **coup d'envoi**, **but** (changement de score), **résultat final**. Le SW poll désormais aussi les ligues des équipes suivies + le basket. (Déclenchement réel vérifiable pendant un match en direct.)
+
 ## [0.9.0] — 2026-06-22 — Basket (NBA / WNBA)
 - **Basket** activable dans ⚙ : suivre des ligues (NBA, WNBA) via ESPN (sans clé). Compact = match pertinent (live/prochain/dernier), vue plein écran = matchs en direct / à venir / récents par ligue. Classements basket : ultérieurement.
 

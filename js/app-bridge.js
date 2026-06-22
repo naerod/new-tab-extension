@@ -8,7 +8,7 @@
 import { storage } from "./core/storage.js";
 import { buildRegistry } from "./providers/index.js";
 import { formLabel } from "./providers/types.js";
-import { COMP_TO_ESPN, FOOTBALL_LEAGUES, leagueName, BASKET_TO_ESPN, BASKET_LEAGUES, basketName } from "./providers/leagues.js";
+import { COMP_TO_ESPN, FOOTBALL_LEAGUES, leagueName, BASKET_TO_ESPN, BASKET_LEAGUES, basketName, TENNIS_TOURS, tennisName, tennisId } from "./providers/leagues.js";
 
 const PROXY_BASE = "https://naerod.com";
 const httpGet = async (url) => {
@@ -75,6 +75,39 @@ async function basketScoreboard(code) {
   } catch (e) { return cached ? cached.value : []; }
 }
 
+// ---- Tennis (TheSportsDB, public test key ; events only) -------------------
+const TSDB = "https://www.thesportsdb.com/api/v1/json/3";
+function tsdbToMatch(e) {
+  const raw = (e.strStatus || "").toLowerCase();
+  const st = /finish|ft|aet|after|match finished/.test(raw) ? "finished"
+    : /(in play|live|1st|2nd|set)/.test(raw) ? "live"
+    : "scheduled";
+  const time = e.strTime && e.strTime !== "00:00:00" ? e.strTime : "12:00:00";
+  const utcDate = e.dateEvent ? (e.dateEvent + "T" + time + "Z") : "";
+  const n = (x) => (x != null && x !== "" ? Number(x) : null);
+  return {
+    id: e.idEvent, sport: "tennis", competition: e.strLeague || "", utcDate, status: st, minute: null,
+    home: { team: { id: e.idHomeTeam || "", name: e.strHomeTeam || e.strEvent || "?", source: "thesportsdb" }, score: n(e.intHomeScore) },
+    away: { team: { id: e.idAwayTeam || "", name: e.strAwayTeam || "", source: "thesportsdb" }, score: n(e.intAwayScore) },
+    winner: null, source: "thesportsdb",
+  };
+}
+async function tennisEvents(code) {
+  const id = tennisId(code); if (!id) return [];
+  const key = "sport:tennis:" + code;
+  const cached = await storage.getCacheStale(key);
+  if (cached && !cached.stale) return cached.value;
+  try {
+    const [past, next] = await Promise.all([
+      httpGet(`${TSDB}/eventspastleague.php?id=${id}`).catch(() => ({})),
+      httpGet(`${TSDB}/eventsnextleague.php?id=${id}`).catch(() => ({})),
+    ]);
+    const ev = [].concat(past.events || [], next.events || []).map(tsdbToMatch);
+    await storage.setCache(key, ev, 10 * 60_000);
+    return ev;
+  } catch (e) { return cached ? cached.value : []; }
+}
+
 // ---- F1 (Jolpica / Ergast, keyless, direct) --------------------------------
 const F1_BASE = "https://api.jolpi.ca/ergast/f1";
 async function f1Get(path, key, ttl) {
@@ -121,6 +154,9 @@ window.NT = {
   BASKET_LEAGUES,
   basketName,
   basketScoreboard,
+  TENNIS_TOURS,
+  tennisName,
+  tennisEvents,
   footballScoreboard,
   footballStandings,
   footballTeams,
