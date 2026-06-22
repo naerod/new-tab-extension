@@ -481,19 +481,20 @@
   .search{
     display:flex; align-items:center; gap:10px;
     background:var(--card);
-    border:1px solid var(--line);
+    border:1px solid var(--search-accent-line);   /* contour tinted by the engine, even at rest (§3.6) */
     border-radius:14px;
     padding:7px 8px 7px 18px;
     margin-bottom:30px;
     transition:border-color .18s, background .18s, box-shadow .18s;
   }
-  /* §3.6 — search bar accent follows the selected engine (class set by JS) */
-  .search.eng-google{ --search-accent:#e8eaed; --search-accent-line:rgba(232,234,237,.45); }
-  .search.eng-gemini{ --search-accent:#4285f4; --search-accent-line:rgba(66,133,244,.5); }
-  .search.eng-claude{ --search-accent:#d97757; --search-accent-line:rgba(217,119,87,.5); }
+  /* §3.6 — search bar accent follows the selected engine (class set by JS).
+     Colours match the engine seg-button colours below. */
+  .search.eng-google{ --search-accent:#e8eaed; --search-accent-line:rgba(232,234,237,.55); }
+  .search.eng-gemini{ --search-accent:#4285f4; --search-accent-line:rgba(66,133,244,.6); }
+  .search.eng-claude{ --search-accent:#d97757; --search-accent-line:rgba(217,119,87,.6); }
   .search:focus-within{
-    border-color:var(--search-accent-line); background:var(--card-2);
-    box-shadow:0 0 0 3px color-mix(in srgb, var(--search-accent) 20%, transparent);
+    border-color:var(--search-accent); background:var(--card-2);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--search-accent) 22%, transparent);
   }
   .search .glass{ width:18px; height:18px; flex:none; color:var(--ink-3); }
   .search input{
@@ -511,9 +512,9 @@
   }
   .seg button:hover{ color:var(--ink-2); }
   .seg button[aria-pressed="true"]{ background:var(--accent-soft); color:var(--accent); }
-  .seg button[data-engine="google"][aria-pressed="true"]{ background:rgba(255,255,255,.09); color:var(--ink); }
-  .seg button[data-engine="gemini"][aria-pressed="true"]{ background:rgba(77,139,240,.16); color:#5b9bf5; }
-  .seg button[data-engine="claude"][aria-pressed="true"]{ background:rgba(217,119,87,.18); color:#e08a5f; }
+  .seg button[data-engine="google"][aria-pressed="true"]{ background:rgba(232,234,237,.12); color:var(--ink); }
+  .seg button[data-engine="gemini"][aria-pressed="true"]{ background:rgba(66,133,244,.16); color:#4285f4; }
+  .seg button[data-engine="claude"][aria-pressed="true"]{ background:rgba(217,119,87,.18); color:#d97757; }
 
   /* ================= BENTO ================= */
   .bento{ display:grid; grid-template-columns:repeat(12,1fr); gap:var(--gap); align-items:start; }
