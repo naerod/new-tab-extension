@@ -3,6 +3,9 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.3.1] — 2026-06-22 — Vue détaillée en grande pop-up
+- La vue détaillée d'un widget est maintenant une **grande pop-up** au-dessus de l'accueil assombri (au lieu d'un remplacement plein écran). **Fermeture facile** : clic sur le fond, **Échap**, ou bouton **×**. Décision Dorian, écart assumé au brief §3.4 (ADR-009).
+
 ## [0.3.0] — 2026-06-22 — Classements football (football-data via proxy)
 ### Ajouté
 - **Classements complets** dans la vue plein écran Sport : tableau par ligue (Rang, Club + logo, MJ, G, N, P, DB, Pts, **Forme** V/N/D colorée §4.2/4.3), scrollable.

@@ -2418,22 +2418,23 @@
   });
 
   /* ============================================================
-     ROUTER — vues plein écran (mini-SPA, §3.4). Masque l'accueil, affiche une
-     vue avec flèche retour ; la barre de recherche reste épinglée (cf. CSS).
+     ROUTER — vue détaillée en GRANDE POP-UP au-dessus de l'accueil assombri.
+     Fermeture facile : clic en dehors (backdrop), touche Échap, ou bouton ×.
      ============================================================ */
   const Router = (function () {
     const layer = $("#viewLayer");
     function open(title, bodyHtml, afterRender) {
       if (!layer) return;
-      const back = LANG === "fr" ? "Retour" : "Back";
-      layer.innerHTML = '<div class="view-head">'
-        + '<button type="button" class="view-back gear" aria-label="' + back + '">' + SVGI.chevL + '</button>'
-        + '<h2 class="view-title">' + escHtml(title) + '</h2></div>'
-        + '<div class="view-body">' + bodyHtml + '</div>';
+      const closeLbl = LANG === "fr" ? "Fermer" : "Close";
+      layer.innerHTML = '<div class="view-backdrop"></div>'
+        + '<div class="view-panel" role="dialog" aria-modal="true" aria-label="' + escHtml(title) + '">'
+        + '<div class="view-head"><h2 class="view-title">' + escHtml(title) + '</h2>'
+        + '<button type="button" class="view-close gear" aria-label="' + closeLbl + '">' + SVGI.close + '</button></div>'
+        + '<div class="view-body">' + bodyHtml + '</div></div>';
       document.body.classList.add("in-view");
-      layer.querySelector(".view-back").addEventListener("click", close);
+      layer.querySelector(".view-backdrop").addEventListener("click", close);
+      layer.querySelector(".view-close").addEventListener("click", close);
       if (afterRender) afterRender(layer.querySelector(".view-body"));
-      try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
     }
     function close() { document.body.classList.remove("in-view"); if (layer) layer.innerHTML = ""; }
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && document.body.classList.contains("in-view")) close(); });

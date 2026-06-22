@@ -35,6 +35,12 @@ Format : décision · contexte · choix · conséquences.
 - **Écart au brief assumé** : §0.3 (indigo) non suivi, sur décision explicite de Dorian.
 - **Conséquences** : surfaces d'accent inchangées (tout via `var(--accent*)`), bascule en une fois.
 
+## ADR-009 — Vue détaillée = grande pop-up (révisé par Dorian 2026-06-22)
+- **Contexte** : le brief §3.4 imposait des **pages plein écran (PAS de modale)**. Implémenté ainsi en v0.2.0 (remplacement total + flèche retour).
+- **Choix** : **grande pop-up** au-dessus de l'accueil assombri (panneau `min(1280px,94vw) × 90vh`), fermable par **clic sur le fond / Échap / bouton ×**. Préférence de Dorian : le dismiss doit être facile (cliquer n'importe où en dehors), pas viser une petite flèche.
+- **Écart au brief assumé** : §3.4 (pas de modale) non suivi, sur décision explicite de Dorian. On conserve la place pour le contenu riche (la pop-up est très grande + scroll interne).
+- **Conséquences** : `Router` rend backdrop + panneau ; l'accueil reste rendu derrière (repère visuel « c'est une surcouche »).
+
 ## ADR-008 — Versioning sémantique de dev + tags git (2026-06-22)
 - **Contexte** : Dorian veut un vrai versioning et pouvoir revenir à une version par son numéro.
 - **Choix** : **SemVer en phase dev → `0.MINOR.PATCH`**. Baseline = **0.1.0**. `MINOR` = nouvelle fonctionnalité / évolution notable ; `PATCH` = correctif/ajustement. Chaque version est **taguée dans git** (`vX.Y.Z`) → revenir en arrière = `git checkout vX.Y.Z`. `manifest.json` et `package.json` portent le même numéro. Passage en `1.0.0` réservé à la première publication Store.
