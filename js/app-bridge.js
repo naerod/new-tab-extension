@@ -61,6 +61,31 @@ async function footballTeamMatches(teamId, opts) {
   }
 }
 
+// ---- Sport headlines (Google News RSS) — actus foot + esport ----------------
+async function sportsHeadlines() {
+  const key = "sport:news";
+  const cached = await storage.getCacheStale(key);
+  if (cached && !cached.stale) return cached.value;
+  const queries = ["football actualité", "esport CS2 Counter-Strike Valorant League of Legends"];
+  try {
+    const all = [];
+    for (const q of queries) {
+      const url = "https://news.google.com/rss/search?q=" + encodeURIComponent(q) + "&hl=fr&gl=FR&ceid=FR:fr";
+      const r = await fetch(url); if (!r.ok) continue;
+      const doc = new DOMParser().parseFromString(await r.text(), "text/xml");
+      Array.prototype.slice.call(doc.querySelectorAll("item"), 0, 8).forEach((it) => {
+        const g = (s) => { const e = it.querySelector(s); return e ? e.textContent : ""; };
+        const title = g("title");
+        if (title) all.push({ title, link: g("link"), source: g("source"), date: g("pubDate") });
+      });
+    }
+    const seen = new Set();
+    const out = all.filter((n) => { const k = n.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 8);
+    await storage.setCache(key, out, 15 * 60_000);
+    return out;
+  } catch (e) { return cached ? cached.value : []; }
+}
+
 // ---- Basketball (ESPN, keyless) --------------------------------------------
 async function basketScoreboard(code) {
   const key = "sport:bball:" + code;
@@ -159,6 +184,7 @@ window.NT = {
   tennisName,
   tennisEvents,
   footballScoreboard,
+  sportsHeadlines,
   footballStandings,
   footballTeams,
   footballTeamMatches,

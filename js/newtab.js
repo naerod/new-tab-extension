@@ -2552,6 +2552,7 @@
     let f1sched = [], f1drv = [], f1con = []; // F1 schedule + driver/constructor standings
     let bballBoards = {}; // basket league code -> Match[]
     let tnBoards = {};    // tennis tour code -> Match[]
+    let defNews = [], defItems = []; // mode défaut : actus sport + items mixés (matchs/actus)
     let pager = null, rotTimer = null, pendingTeamLeague = null;
 
     const footballOn = () => cfg.sports.indexOf("football") !== -1;
@@ -2582,6 +2583,7 @@
       if (footballDefault()) {
         const def = NT.DEFAULT_FOOTBALL || [];
         await Promise.all(def.map(async (c) => { boards[c] = await NT.footballScoreboard(c); }));
+        defNews = (await NT.sportsHeadlines()) || [];
       }
       await Promise.all([].concat(
         leagueComps.map(async (c) => { boards[c] = await NT.footballScoreboard(c); }),
@@ -2675,10 +2677,11 @@
       const right = kind === "live" ? '<span class="sp-live">' + t("sport.live") + (m.minute ? " " + m.minute + "'" : "") + '</span>'
         : (kind === "finished" || kind === "last") ? ''
         : '<span class="sp-time">' + escHtml(tfmt.format(new Date(m.utcDate))) + '</span>';
+      const crest = (s) => s.team.crest ? '<img class="sp-crest" src="' + escHtml(s.team.crest) + '" alt="" loading="lazy">' : '';
       return '<div class="sp-match' + (kind === "live" ? " is-live" : "") + '">'
-        + '<div class="sp-teams"><span class="sp-team">' + teamLabel(m.home) + '</span>'
+        + '<div class="sp-teams"><span class="sp-team">' + crest(m.home) + teamLabel(m.home) + '</span>'
         + '<span class="sp-vs tnum">' + mid + '</span>'
-        + '<span class="sp-team">' + teamLabel(m.away) + '</span></div>'
+        + '<span class="sp-team">' + crest(m.away) + teamLabel(m.away) + '</span></div>'
         + (right ? '<div class="sp-meta">' + right + '</div>' : '') + '</div>';
     }
     function formCell(form) {
@@ -2757,10 +2760,43 @@
       return '<div class="sv-league"><h3>' + escHtml(nameOf(comp)) + '</h3>'
         + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last") + '</div>';
     }
+    // mode par défaut « For You » : items mixés (matchs du jour France-en-tête + actus sport/esport)
+    const isFrance = (m) => (m.home.team.name || "").toLowerCase() === "france" || (m.away.team.name || "").toLowerCase() === "france";
+    function defaultItems() {
+      const comps = (window.NT && window.NT.DEFAULT_FOOTBALL) || [];
+      let all = []; comps.forEach((c) => (boards[c] || []).forEach((m) => all.push(Object.assign({ _comp: c }, m))));
+      const seen = new Set(); all = all.filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true; });
+      const now = Date.now();
+      const frFirst = (arr) => arr.filter(isFrance).concat(arr.filter((m) => !isFrance(m)));
+      const live = frFirst(all.filter((m) => m.status === "live"));
+      const today = frFirst(all.filter((m) => m.status === "scheduled" && ts(m.utcDate) > now).sort((a, b) => ts(a.utcDate) - ts(b.utcDate)));
+      const recent = frFirst(all.filter((m) => m.status === "finished").sort((a, b) => ts(b.utcDate) - ts(a.utcDate)));
+      const items = [];
+      live.forEach((m) => items.push({ kind: "match", m, k: "live" }));
+      today.forEach((m) => items.push({ kind: "match", m, k: "next" }));
+      (defNews || []).slice(0, 4).forEach((n) => items.push({ kind: "news", n }));
+      recent.slice(0, 6).forEach((m) => items.push({ kind: "match", m, k: "last" }));
+      return items.slice(0, 9);
+    }
+    function defItemPage(it) {
+      if (it.kind === "news") {
+        const n = it.n;
+        return '<div class="sp-page"><div class="sp-league">' + (LANG === "fr" ? "Actu sport & esport" : "Sport & esports") + '</div>'
+          + '<a class="sp-newsitem" href="' + escHtml(n.link) + '" target="_blank" rel="noopener"><div class="t">' + escHtml(n.title) + '</div>' + (n.source ? '<div class="s">' + escHtml(n.source) + '</div>' : '') + '</a></div>';
+      }
+      const m = it.m;
+      return '<div class="sp-page"><div class="sp-league">' + escHtml(nameOf(m._comp)) + '</div>' + matchRow(m, it.k) + '</div>';
+    }
+    function newsSection() {
+      if (!defNews.length) return "";
+      const items = defNews.slice(0, 8).map((n) => '<a class="sv-news" href="' + escHtml(n.link) + '" target="_blank" rel="noopener"><span class="t">' + escHtml(n.title) + '</span>' + (n.source ? '<span class="s">' + escHtml(n.source) + '</span>' : '') + '</a>').join("");
+      return '<div class="sv-league"><h3>' + (LANG === "fr" ? "Actualités sport & esport" : "Sport & esports news") + '</h3>' + items + '</div>';
+    }
     function keyOf(f) { return f.type === "team" ? ("T" + f.id) : ("L" + f.comp); }
     function followByKey(k) { return follows().find((f) => keyOf(f) === k); }
 
     function compactPage(k) {
+      if (k[0] === "D") { const i = +k.slice(1); return defItems[i] ? defItemPage(defItems[i]) : ""; }
       if (k === "F1") return f1Compact();
       if (k[0] === "B") {
         const code = k.slice(1); const pick = pickMatch(bballBoards[code]);
@@ -2790,7 +2826,7 @@
     function ensurePager() {
       if (pager) return;
       pager = makePager(card, host, { pageSize: 1, renderSlice: (slice) => slice.length ? compactPage(slice[0]) : "" });
-      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow")) return; if (footballDefault() || (footballOn() && follows().length) || (basketOn() && basketFollows().length) || (tennisOn() && tennisFollows().length) || f1On()) openView(); });
+      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow, a")) return; if (footballDefault() || (footballOn() && follows().length) || (basketOn() && basketFollows().length) || (tennisOn() && tennisFollows().length) || f1On()) openView(); });
     }
     function startRotation() {
       if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
@@ -2803,14 +2839,14 @@
       const hasBk = basketOn() && basketFollows().length;
       const hasTn = tennisOn() && tennisFollows().length;
       const dflt = footballDefault();
-      const dcomps = dflt ? defaultComps() : [];
-      if (!hasFb && !hasBk && !hasTn && !f1On() && !dcomps.length) {
+      defItems = dflt ? defaultItems() : [];
+      if (!hasFb && !hasBk && !hasTn && !f1On() && !defItems.length) {
         if (meta) meta.textContent = "";
         pager.message('<div class="empty">' + (dflt ? t("sport.noToday") : t("empty.sport")) + '</div>');
         if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
         return;
       }
-      let keys = dflt ? dcomps.map((c) => "L" + c) : (footballOn() ? orderedFollows().map(keyOf) : []);
+      let keys = dflt ? defItems.map((_, i) => "D" + i) : (footballOn() ? orderedFollows().map(keyOf) : []);
       if (basketOn()) basketFollows().forEach((f) => keys.push("B" + f.comp));
       if (tennisOn()) tennisFollows().forEach((f) => keys.push("N" + f.comp));
       if (f1On()) keys.push("F1");
@@ -2898,7 +2934,7 @@
     }
     function openView() {
       let sections = footballDefault()
-        ? defaultComps().map(defaultSection).join("")
+        ? (defaultComps().map(defaultSection).join("") + newsSection())
         : (footballOn() ? orderedFollows().map((f) => f.type === "team" ? teamSection(f) : leagueSection(f)).join("") : "");
       if (basketOn()) sections += basketFollows().map(basketSection).join("");
       if (tennisOn()) sections += tennisFollows().map(tennisSection).join("");

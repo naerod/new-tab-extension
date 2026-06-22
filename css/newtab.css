@@ -1309,3 +1309,21 @@ html[data-theme="light"] .sv-league{ background:var(--card); border-color:rgba(2
 .sv-bell:hover{ color:var(--ink); border-color:var(--accent-line); }
 .sv-bell.on{ color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
 .sv-bell svg{ width:16px; height:16px; }
+
+/* Fix : la croix/flèche de la pop-up ne doit pas pivoter comme une roue crantée */
+.view-close:hover svg, .view-back:hover svg{ transform:none; }
+/* Logos d'équipes / drapeaux dans les lignes de match (couleur §DA) */
+.sp-crest{ width:18px; height:18px; object-fit:contain; vertical-align:middle; margin-right:7px; flex:none; border-radius:3px; }
+.sp-team{ display:inline-flex; align-items:center; min-width:0; }
+.sp-team .sp-crest{ margin-right:6px; }
+
+/* Mode défaut : page actu dans le compact + liste actus dans la vue */
+.sp-newsitem{ display:block; text-decoration:none; padding:10px 12px; background:var(--card-2); border:1px solid var(--line); border-radius:var(--r-sm); margin-top:6px; }
+.sp-newsitem .t{ font-size:13px; font-weight:500; color:var(--ink); line-height:1.35; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.sp-newsitem .s{ font-size:11px; color:var(--ink-3); margin-top:5px; }
+.sp-newsitem:hover .t{ color:var(--accent); }
+.sv-news{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; text-decoration:none; padding:9px 4px; border-top:1px solid var(--line); }
+.sv-news:first-of-type{ border-top:0; }
+.sv-news .t{ font-size:13px; color:var(--ink); line-height:1.35; }
+.sv-news:hover .t{ color:var(--accent); }
+.sv-news .s{ font-size:11px; color:var(--ink-3); white-space:nowrap; flex:none; }

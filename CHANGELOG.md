@@ -3,6 +3,12 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.14.0] — 2026-06-22 — Contenu par défaut riche + couleur (sport)
+- **Mode défaut « For You »** : les 9 pages se remplissent d'un **mix matchs + actualités sport/esport** (Google News RSS, requêtes foot + esport), **équipe de France en priorité**. Ex. France-Iraq en une + une actu type « Falcons 3-0 Furia (major) ».
+- **Couleur / drapeaux / logos** : écussons de club et **drapeaux nationaux** ajoutés dans les lignes de match (compact + vue) — gros gain visuel, notamment Coupe du monde.
+- Vue détaillée par défaut : sections matchs par compétition **+ section « Actualités sport & esport »**.
+- **Fix** : la **croix ×** de la pop-up ne pivote plus comme une roue crantée (héritait de l'animation `.gear`).
+
 ## [0.13.0] — 2026-06-22 — Affiches du jour par défaut (§4.5)
 - **Football activé sans aucun suivi → affiches du jour** : le widget montre les matchs du jour des grandes compétitions, **majors en cours en priorité**. La **Coupe du monde** et l'**Euro** sont ajoutés (ESPN `fifa.world` / `uefa.euro`). Ex. « Coupe du monde — France 0–0 Iraq · En direct » sans rien configurer.
 - Compact + vue plein écran en mode défaut (live > imminent > récent), triés par pertinence.
