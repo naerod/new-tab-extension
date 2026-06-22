@@ -73,7 +73,14 @@ if (args.onboard != null) {
   await page.evaluate(() => { window.Onboarding && window.Onboarding.start(); });
   await page.waitForTimeout(400);
   for (let i = 0; i < Number(args.onboard); i++) { await page.click(".ob-next").catch(() => {}); await page.waitForTimeout(350); }
-  if (args.obfoot) { await page.click('.ob-chip:has-text("Football")').catch(() => {}); await page.waitForTimeout(600); }
+  if (args.obfoot) {
+    await page.click('.ob-chip:has-text("Football")').catch(() => {});
+    await page.waitForTimeout(500);
+    await page.click('.ms-field').catch(() => {});                       // open the dropdown
+    await page.waitForTimeout(300);
+    await page.click('.ms-opt:has-text("Ligue 1")').catch(() => {});     // select one -> tag + check
+    await page.waitForTimeout(500);
+  }
   await page.waitForTimeout(600);
 }
 

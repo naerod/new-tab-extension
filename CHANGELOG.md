@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.16.0] — 2026-06-22 — Multi-select façon Discord (ligues)
+- **Onboarding ligues** : remplacé la grille de chips par un **menu déroulant avec recherche** (style Discord) — tags retirables (logo + ×), champ de recherche, liste filtrable avec logos + coche. Composant `multiSelect` réutilisable.
+- Titre de section plus **évocateur** (« Quelles ligues de football suivre ? ») mis en avant avec une **vraie ligne** de séparation.
+
 ## [0.15.0] — 2026-06-22 — Fini les cases à cocher : emojis + logos
 - **Suppression des cases à cocher** dans l'onboarding (les pilules `.on` orange suffisent ; case masquée).
 - **Sports en emoji** : ⚽ Football · 🏎️ Formule 1 · 🏀 Basket · 🎾 Tennis (+ basket/tennis désormais proposés à l'onboarding).

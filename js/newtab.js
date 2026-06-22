@@ -73,7 +73,7 @@
       "ob.google.btn": "Connecter Google", "ob.google.connecting": "Connexion…", "ob.google.ok": "✓ Connecté", "ob.google.retry": "Réessayer",
       "ob.widgets.title": "Tes widgets", "ob.widgets.sub": "Active ce que tu veux voir. Modifiable à tout moment via la roue ⚙ en haut à droite.",
       "ob.sports.title": "Quels sports suis-tu ?", "ob.sports.sub": "Coche tes sports — le widget Sport s'adapte. Tu pourras suivre une équipe précise dans les réglages.",
-      "ob.sports.leagues": "Ligues à suivre (football)",
+      "ob.sports.leagues": "Quelles ligues de football suivre ?", "ob.sports.leaguesPh": "Rechercher une ligue…",
       "ob.done.title": "Tout est prêt{name} !",
       "ob.done.sub": "Chaque carte a une roue ⚙ pour la personnaliser : Steam ID pour CS2, tes URL pour les Sites, ta watchlist pour la Bourse…",
       "ob.done.btn": "Lancer mon tableau de bord",
@@ -154,7 +154,7 @@
       "ob.google.btn": "Connect Google", "ob.google.connecting": "Connecting…", "ob.google.ok": "✓ Connected", "ob.google.retry": "Try again",
       "ob.widgets.title": "Your widgets", "ob.widgets.sub": "Turn on what you want to see. Change it anytime from the ⚙ gear at the top right.",
       "ob.sports.title": "Which sports do you follow?", "ob.sports.sub": "Tick your sports — the Sport widget adapts. You can follow a specific team in settings.",
-      "ob.sports.leagues": "Leagues to follow (football)",
+      "ob.sports.leagues": "Which football leagues to follow?", "ob.sports.leaguesPh": "Search a league…",
       "ob.done.title": "All set{name}!",
       "ob.done.sub": "Every card has a ⚙ gear to personalize it: Steam ID for CS2, your URLs for Websites, your watchlist for Markets…",
       "ob.done.btn": "Open my dashboard",
@@ -3163,6 +3163,60 @@
       });
       body.appendChild(grid);
     }
+    // Multi-select façon Discord : tags retirables + menu déroulant avec recherche.
+    // items: [{value,label,logo,emoji}] ; isSelected(v) ; onToggle(v) ; placeholder.
+    const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    function msIcon(it) {
+      const ic = el("span", "ms-ic");
+      if (it.logo) { const img = el("img"); img.src = it.logo; img.alt = ""; img.addEventListener("error", () => { ic.textContent = it.emoji || "•"; }); ic.appendChild(img); }
+      else ic.textContent = it.emoji || "•";
+      return ic;
+    }
+    function multiSelect(opts) {
+      const root = el("div", "ms");
+      const field = el("div", "ms-field");
+      const tags = el("div", "ms-tags");
+      const input = el("input", "ms-input"); input.type = "text"; input.placeholder = opts.placeholder || (LANG === "fr" ? "Rechercher…" : "Search…");
+      const caret = el("span", "ms-caret"); caret.innerHTML = SVGI.chevD;
+      field.appendChild(tags); field.appendChild(input); field.appendChild(caret);
+      const menu = el("div", "ms-menu");
+      root.appendChild(field); root.appendChild(menu);
+      function setOpen(v) { root.classList.toggle("open", v); if (v) { paintMenu(input.value); } }
+      function paintTags() {
+        tags.innerHTML = "";
+        opts.items.filter((it) => opts.isSelected(it.value)).forEach((it) => {
+          const tg = el("span", "ms-tag");
+          tg.appendChild(msIcon(it));
+          tg.appendChild(el("span", "ms-tag-l", escHtml(it.label)));
+          const x = el("button", "ms-x"); x.type = "button"; x.innerHTML = SVGI.close;
+          x.addEventListener("click", (e) => { e.stopPropagation(); opts.onToggle(it.value); paintTags(); paintMenu(input.value); });
+          tg.appendChild(x); tags.appendChild(tg);
+        });
+      }
+      function paintMenu(q) {
+        const f = (q || "").trim().toLowerCase();
+        const list = opts.items.filter((it) => !f || it.label.toLowerCase().indexOf(f) !== -1);
+        menu.innerHTML = "";
+        if (!list.length) { menu.appendChild(el("div", "ms-empty", LANG === "fr" ? "Aucun résultat" : "No result")); return; }
+        list.forEach((it) => {
+          const on = opts.isSelected(it.value);
+          const o = el("div", "ms-opt" + (on ? " on" : ""));
+          o.appendChild(msIcon(it));
+          o.appendChild(el("span", "ms-opt-l", escHtml(it.label)));
+          const ck = el("span", "ms-check"); ck.innerHTML = on ? CHECK : "";
+          o.appendChild(ck);
+          o.addEventListener("mousedown", (e) => { e.preventDefault(); opts.onToggle(it.value); paintTags(); paintMenu(input.value); });
+          menu.appendChild(o);
+        });
+      }
+      field.addEventListener("click", () => { input.focus(); setOpen(true); });
+      input.addEventListener("input", () => { setOpen(true); paintMenu(input.value); });
+      input.addEventListener("focus", () => setOpen(true));
+      document.addEventListener("click", (e) => { if (!root.contains(e.target)) setOpen(false); });
+      paintTags();
+      return root;
+    }
+
     // §3.7 — choix des sports (multi-select) + sections dynamiques (ligues football)
     function stepSports(body) {
       body.appendChild(el("h2", "ob-title", t("ob.sports.title")));
@@ -3185,19 +3239,17 @@
       });
       body.appendChild(grid);
       if (state.sports.indexOf("football") !== -1) {
-        body.appendChild(el("p", "ob-sub ob-sub2", t("ob.sports.leagues")));
+        const sec = el("div", "ob-section");
+        sec.appendChild(el("h3", "ob-section-t", t("ob.sports.leagues")));
         const leagues = (window.NT && window.NT.FOOTBALL_LEAGUES) || [];
-        const lg = el("div", "ob-grid");
-        leagues.forEach((l) => {
-          const on = state.leagues.indexOf(l.code) !== -1;
-          const lbl = el("label", "ob-chip" + (on ? " on" : ""));
-          const c = el("input"); c.type = "checkbox"; c.checked = on;
-          c.addEventListener("change", () => { if (c.checked) { if (state.leagues.indexOf(l.code) === -1) state.leagues.push(l.code); } else state.leagues = state.leagues.filter((x) => x !== l.code); lbl.classList.toggle("on", c.checked); });
-          const ic = el("span", "ob-ic");
-          if (l.logo) { const img = el("img", "ob-logo"); img.src = l.logo; img.alt = ""; img.addEventListener("error", () => { ic.textContent = "⚽"; }); ic.appendChild(img); } else ic.textContent = "⚽";
-          lbl.appendChild(c); lbl.appendChild(ic); lbl.appendChild(el("span", null, l.name)); lg.appendChild(lbl);
-        });
-        body.appendChild(lg);
+        const items = leagues.map((l) => ({ value: l.code, label: l.name, logo: l.logo, emoji: "⚽" }));
+        sec.appendChild(multiSelect({
+          items,
+          placeholder: t("ob.sports.leaguesPh"),
+          isSelected: (v) => state.leagues.indexOf(v) !== -1,
+          onToggle: (v) => { const i = state.leagues.indexOf(v); if (i === -1) state.leagues.push(v); else state.leagues.splice(i, 1); },
+        }));
+        body.appendChild(sec);
       }
     }
     function stepDone(body, nav) {
