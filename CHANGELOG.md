@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.0] — 2026-06-22 — Récap + bouton Google honnête
+- **Docs** : `docs/RECAP.md` (bilan complet + versions + points à travailler) et `docs/SETUP-OAUTH.md` (procédure OAuth).
+- **Fix bouton « Connecter Google »** : vérifie réellement le token (appel `userinfo`) avant d'afficher « Connecté » ; sinon « Réessayer ». Fin du faux « Connecté ». ⚠️ OAuth fonctionnel nécessite encore un client de type « Extension Chrome » (voir SETUP-OAUTH.md).
+
 ## [0.17.0] — 2026-06-22 — Multi-select généralisé (réglages)
 - Composant `multiSelect` **sorti au niveau global** + **nouveau type de champ Settings `multiselect`** (réutilisable par tous les widgets).
 - **Réglages du widget Sport** : ligues football / basket / tennis et **équipes** passent au multiselect (recherche + tags + logos) au lieu des listes + menus. Logos NBA/WNBA ajoutés.
