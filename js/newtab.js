@@ -2548,10 +2548,14 @@
     let teamMx = {};      // teamId -> Match[] (football-data, finished + scheduled)
     let teamsByComp = {}; // comp -> Team[] (settings autocomplete)
     let f1sched = [], f1drv = [], f1con = []; // F1 schedule + driver/constructor standings
+    let bballBoards = {}; // basket league code -> Match[]
     let pager = null, rotTimer = null, pendingTeamLeague = null;
 
     const footballOn = () => cfg.sports.indexOf("football") !== -1;
     const f1On = () => cfg.sports.indexOf("f1") !== -1;
+    const basketOn = () => cfg.sports.indexOf("basketball") !== -1;
+    const basketFollows = () => (cfg.follows && cfg.follows.basketball) || [];
+    const basketNameOf = (code) => (window.NT && window.NT.basketName) ? window.NT.basketName(code) : code;
     const follows = () => (cfg.follows && cfg.follows.football) || [];
     const leagueFollows = () => follows().filter((f) => f.type !== "team");
     const teamFollows = () => follows().filter((f) => f.type === "team");
@@ -2576,6 +2580,9 @@
           teamMx[f.id] = (fin || []).concat(sc || []);
         })
       ));
+      if (basketOn()) {
+        await Promise.all(basketFollows().map(async (f) => { bballBoards[f.comp] = await NT.basketScoreboard(f.comp); }));
+      }
       if (f1On()) {
         const [sc, dr, co] = await Promise.all([NT.f1Schedule(), NT.f1Standings("driver"), NT.f1Standings("constructor")]);
         f1sched = sc || []; f1drv = dr || []; f1con = co || [];
@@ -2716,6 +2723,11 @@
 
     function compactPage(k) {
       if (k === "F1") return f1Compact();
+      if (k[0] === "B") {
+        const code = k.slice(1); const pick = pickMatch(bballBoards[code]);
+        return '<div class="sp-page"><div class="sp-league">' + escHtml(basketNameOf(code)) + '</div>'
+          + (pick ? matchRow(pick.m, pick.kind) : '<div class="empty">' + t("sport.noMatch") + '</div>') + '</div>';
+      }
       const f = followByKey(k); if (!f) return "";
       if (f.type === "team") {
         const snip = compactStanding(standings[f.comp], f.id);
@@ -2732,7 +2744,7 @@
     function ensurePager() {
       if (pager) return;
       pager = makePager(card, host, { pageSize: 1, renderSlice: (slice) => slice.length ? compactPage(slice[0]) : "" });
-      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow")) return; if ((footballOn() && follows().length) || f1On()) openView(); });
+      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow")) return; if ((footballOn() && follows().length) || (basketOn() && basketFollows().length) || f1On()) openView(); });
     }
     function startRotation() {
       if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
@@ -2742,13 +2754,15 @@
     function render() {
       ensurePager();
       const hasFb = footballOn() && follows().length;
-      if (!hasFb && !f1On()) {
+      const hasBk = basketOn() && basketFollows().length;
+      if (!hasFb && !hasBk && !f1On()) {
         if (meta) meta.textContent = "";
         pager.message('<div class="empty">' + t("empty.sport") + '</div>');
         if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
         return;
       }
       const keys = (footballOn() ? orderedFollows().map(keyOf) : []);
+      if (basketOn()) basketFollows().forEach((f) => keys.push("B" + f.comp));
       if (f1On()) keys.push("F1");
       if (meta) meta.textContent = keys.length + (LANG === "fr" ? (keys.length > 1 ? " suivis" : " suivi") : (keys.length > 1 ? " follows" : " follow"));
       pager.set(keys);
@@ -2762,6 +2776,7 @@
         leagueFollows().forEach((f) => { cands = cands.concat(boards[f.comp] || []); });
         teamFollows().forEach((f) => { cands = cands.concat(teamMx[f.id] || []); });
       }
+      if (basketOn()) basketFollows().forEach((f) => { cands = cands.concat(bballBoards[f.comp] || []); });
       const live = cands.find((m) => m.status === "live");
       window.__ntHeadline = live ? { home: live.home, away: live.away, minute: live.minute, comp: live.competition } : null;
     }
@@ -2788,8 +2803,19 @@
         + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last")
         + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Classement" : "Standings") + '</div>' + standingsTable(standings[f.comp]) + '</div></div>';
     }
+    function basketSection(f) {
+      const matches = (bballBoards[f.comp] || []).slice().sort((a, b) => ts(a.utcDate) - ts(b.utcDate));
+      const now = Date.now();
+      const live = matches.filter((m) => m.status === "live");
+      const up = matches.filter((m) => m.status === "scheduled" && ts(m.utcDate) > now);
+      const fin = matches.filter((m) => m.status === "finished").reverse();
+      const grp = (label, arr, kind) => arr.length ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
+      return '<div class="sv-league"><h3>' + escHtml(basketNameOf(f.comp)) + '</h3>'
+        + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last") + '</div>';
+    }
     function openView() {
       let sections = (footballOn() ? orderedFollows().map((f) => f.type === "team" ? teamSection(f) : leagueSection(f)).join("") : "");
+      if (basketOn()) sections += basketFollows().map(basketSection).join("");
       if (f1On()) sections += f1Section();
       Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'));
     }
@@ -2837,6 +2863,21 @@
           options: [{ v: "auto", t: t("sport.mode.auto") }, { v: "manual", t: t("sport.mode.manual") }],
           onChange: (v) => { cfg.sport.mode = v; saveCfg(); render(); } });
       }
+      // Basket (toggle + ligues NBA/WNBA)
+      fields.push({ type: "toggle", label: LANG === "fr" ? "Basket" : "Basketball", value: basketOn(),
+        onChange: (v) => { cfg.sports = v ? Array.from(new Set(cfg.sports.concat("basketball"))) : cfg.sports.filter((s) => s !== "basketball"); if (v && !cfg.follows.basketball) cfg.follows.basketball = []; saveCfg(); refreshAll(); openSettings(); } });
+      if (basketOn()) {
+        const bl = (window.NT && window.NT.BASKET_LEAGUES) || [];
+        const curB = basketFollows();
+        fields.push({ type: "list", label: LANG === "fr" ? "Ligues basket" : "Basket leagues",
+          items: curB.map((f) => ({ label: basketNameOf(f.comp) })),
+          move: (from, to) => { const x = cfg.follows.basketball.splice(from, 1)[0]; cfg.follows.basketball.splice(to, 0, x); saveCfg(); render(); },
+          onRemove: (it, i) => { cfg.follows.basketball.splice(i, 1); saveCfg(); refreshAll(); } });
+        const availB = bl.filter((l) => !curB.some((f) => f.comp === l.code));
+        fields.push({ type: "select", label: LANG === "fr" ? "Ajouter une ligue basket" : "Add basket league", value: "",
+          options: [{ v: "", t: t("sport.pick") }].concat(availB.map((l) => ({ v: l.code, t: l.name }))),
+          onChange: (code) => { if (!code) return; if (!cfg.follows.basketball) cfg.follows.basketball = []; cfg.follows.basketball.push({ type: "league", comp: code }); saveCfg(); refreshAll(); openSettings(); } });
+      }
       // F1 (toggle indépendant + pilote suivi optionnel)
       fields.push({ type: "toggle", label: LANG === "fr" ? "Formule 1" : "Formula 1", value: f1On(),
         onChange: (v) => { cfg.sports = v ? Array.from(new Set(cfg.sports.concat("f1"))) : cfg.sports.filter((s) => s !== "f1"); saveCfg(); refreshAll(); openSettings(); } });
@@ -2855,6 +2896,7 @@
         cfg.sports = (await NT.storage.getConfig("sports", [])) || [];
         cfg.follows = (await NT.storage.getConfig("follows", { football: [] })) || { football: [] };
         if (!cfg.follows.football) cfg.follows.football = [];
+        if (!cfg.follows.basketball) cfg.follows.basketball = [];
         cfg.sport = Object.assign({ rotate: 60, mode: "auto" }, (await NT.storage.getConfig("sportCfg", {})) || {});
         cfg.f1 = Object.assign({ driver: null }, (await NT.storage.getConfig("f1cfg", {})) || {});
         await loadData(); lastLoad = Date.now();

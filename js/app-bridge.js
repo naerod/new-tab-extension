@@ -8,7 +8,7 @@
 import { storage } from "./core/storage.js";
 import { buildRegistry } from "./providers/index.js";
 import { formLabel } from "./providers/types.js";
-import { COMP_TO_ESPN, FOOTBALL_LEAGUES, leagueName } from "./providers/leagues.js";
+import { COMP_TO_ESPN, FOOTBALL_LEAGUES, leagueName, BASKET_TO_ESPN, BASKET_LEAGUES, basketName } from "./providers/leagues.js";
 
 const PROXY_BASE = "https://naerod.com";
 const httpGet = async (url) => {
@@ -61,6 +61,20 @@ async function footballTeamMatches(teamId, opts) {
   }
 }
 
+// ---- Basketball (ESPN, keyless) --------------------------------------------
+async function basketScoreboard(code) {
+  const key = "sport:bball:" + code;
+  const cached = await storage.getCacheStale(key);
+  if (cached && !cached.stale) return cached.value;
+  const path = BASKET_TO_ESPN[code];
+  if (!path) return cached ? cached.value : [];
+  try {
+    const matches = await espn.getScoreboard(path, { sport: "basketball" });
+    await storage.setCache(key, matches, 60_000);
+    return matches;
+  } catch (e) { return cached ? cached.value : []; }
+}
+
 // ---- F1 (Jolpica / Ergast, keyless, direct) --------------------------------
 const F1_BASE = "https://api.jolpi.ca/ergast/f1";
 async function f1Get(path, key, ttl) {
@@ -104,6 +118,9 @@ window.NT = {
   formLabel,
   FOOTBALL_LEAGUES,
   leagueName,
+  BASKET_LEAGUES,
+  basketName,
+  basketScoreboard,
   footballScoreboard,
   footballStandings,
   footballTeams,

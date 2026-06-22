@@ -3,6 +3,9 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.9.0] — 2026-06-22 — Basket (NBA / WNBA)
+- **Basket** activable dans ⚙ : suivre des ligues (NBA, WNBA) via ESPN (sans clé). Compact = match pertinent (live/prochain/dernier), vue plein écran = matchs en direct / à venir / récents par ligue. Classements basket : ultérieurement.
+
 ## [0.8.0] — 2026-06-22 — Onboarding : étape Sports (§3.7)
 - Nouvelle étape d'onboarding **« Quels sports suis-tu ? »** : multi-select (Football, F1) avec **sections dynamiques** — cocher Football fait apparaître les **ligues à suivre**. Écrit la config sport (sports + ligues) lue par le widget. Suivi d'une équipe précise renvoyé aux réglages.
 
