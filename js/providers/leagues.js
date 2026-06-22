@@ -15,7 +15,13 @@ export const FOOTBALL_LEAGUES = [
   { code: "CL",  name: "Ligue des Champions",   espn: "soccer/uefa.champions" },
   { code: "EL",  name: "Ligue Europa",          espn: "soccer/uefa.europa" },
   { code: "BSA", name: "Brasileirão",           espn: "soccer/bra.1" },
+  { code: "WC",  name: "Coupe du monde",        espn: "soccer/fifa.world" },
+  { code: "EC",  name: "Euro",                  espn: "soccer/uefa.euro" },
 ];
+
+// Compétitions affichées par défaut (football activé, aucun suivi) → affiches du
+// jour. Les majors en cours (CDM/Euro) priment ; off-saison → simplement vides.
+export const DEFAULT_FOOTBALL = ["WC", "EC", "CL", "EL", "PL", "PD", "SA", "BL1", "FL1"];
 
 export const COMP_TO_ESPN = Object.fromEntries(FOOTBALL_LEAGUES.map((l) => [l.code, l.espn]));
 export const leagueName = (code) => (FOOTBALL_LEAGUES.find((l) => l.code === code) || {}).name || code;

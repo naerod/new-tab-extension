@@ -107,6 +107,7 @@
       "sport.noMatch": "Aucun match à venir.", "sport.more": "Tous les matchs",
       "sport.today": "Aujourd'hui", "sport.upcoming": "À venir", "sport.recent": "Résultats récents",
       "sport.standings.soon": "Classements bientôt (via football-data).",
+      "sport.noToday": "Aucune affiche aujourd'hui.",
       "sport.pick": "Choisir…",
       "sport.follows": "Suivis", "sport.addTeamLeague": "Suivre une équipe — ligue",
       "sport.addTeam": "Équipe à suivre", "sport.rotate": "Rotation auto (s)",
@@ -185,6 +186,7 @@
       "sport.noMatch": "No upcoming match.", "sport.more": "All matches",
       "sport.today": "Today", "sport.upcoming": "Upcoming", "sport.recent": "Recent results",
       "sport.standings.soon": "Standings coming soon (via football-data).",
+      "sport.noToday": "No fixtures today.",
       "sport.pick": "Pick…",
       "sport.follows": "Follows", "sport.addTeamLeague": "Follow a team — league",
       "sport.addTeam": "Team to follow", "sport.rotate": "Auto-rotate (s)",
@@ -2553,6 +2555,8 @@
     let pager = null, rotTimer = null, pendingTeamLeague = null;
 
     const footballOn = () => cfg.sports.indexOf("football") !== -1;
+    // football activé mais aucun suivi → affiches du jour par défaut (§4.5)
+    const footballDefault = () => footballOn() && follows().length === 0;
     const f1On = () => cfg.sports.indexOf("f1") !== -1;
     const basketOn = () => cfg.sports.indexOf("basketball") !== -1;
     const basketFollows = () => (cfg.follows && cfg.follows.basketball) || [];
@@ -2575,6 +2579,10 @@
       const NT = window.NT;
       const leagueComps = leagueFollows().map((f) => f.comp);
       const teamComps = teamFollows().map((f) => f.comp);
+      if (footballDefault()) {
+        const def = NT.DEFAULT_FOOTBALL || [];
+        await Promise.all(def.map(async (c) => { boards[c] = await NT.footballScoreboard(c); }));
+      }
       await Promise.all([].concat(
         leagueComps.map(async (c) => { boards[c] = await NT.footballScoreboard(c); }),
         Array.from(new Set(leagueComps.concat(teamComps))).map(async (c) => { standings[c] = await NT.footballStandings(c); }),
@@ -2725,6 +2733,30 @@
       if (cfg.sport.mode === "manual") return list;
       return list.sort((a, b) => relevance(b) - relevance(a));
     }
+    // mode par défaut : compétitions avec des matchs aujourd'hui, triées par pertinence
+    function defaultComps() {
+      const list = (window.NT && window.NT.DEFAULT_FOOTBALL) || [];
+      const score = (c) => {
+        const ms = boards[c] || []; const now = Date.now();
+        if (ms.some((m) => m.status === "live")) return 1000;
+        const up = ms.filter((m) => m.status === "scheduled").map((m) => ts(m.utcDate)).filter((x) => x > now).sort((a, b) => a - b)[0];
+        if (up) return 800 - Math.min((up - now) / 3600e3, 720);
+        const last = ms.filter((m) => m.status === "finished").map((m) => ts(m.utcDate)).sort((a, b) => b - a)[0];
+        if (last) return 300 - Math.min((now - last) / 3600e3, 240);
+        return 0;
+      };
+      return list.filter((c) => (boards[c] || []).length).sort((a, b) => score(b) - score(a));
+    }
+    function defaultSection(comp) {
+      const matches = (boards[comp] || []).slice().sort((a, b) => ts(a.utcDate) - ts(b.utcDate));
+      const now = Date.now();
+      const live = matches.filter((m) => m.status === "live");
+      const up = matches.filter((m) => m.status === "scheduled" && ts(m.utcDate) > now);
+      const fin = matches.filter((m) => m.status === "finished").reverse();
+      const grp = (label, arr, kind) => arr.length ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
+      return '<div class="sv-league"><h3>' + escHtml(nameOf(comp)) + '</h3>'
+        + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last") + '</div>';
+    }
     function keyOf(f) { return f.type === "team" ? ("T" + f.id) : ("L" + f.comp); }
     function followByKey(k) { return follows().find((f) => keyOf(f) === k); }
 
@@ -2740,23 +2772,25 @@
         return '<div class="sp-page"><div class="sp-league">' + escHtml(tennisNameOf(code)) + '</div>'
           + (pick ? matchRow(pick.m, pick.kind) : '<div class="empty">' + t("sport.noMatch") + '</div>') + '</div>';
       }
-      const f = followByKey(k); if (!f) return "";
-      if (f.type === "team") {
+      if (k[0] === "T") {
+        const f = teamFollows().find((x) => ("T" + x.id) === k); if (!f) return "";
         const snip = compactStanding(standings[f.comp], f.id);
         const pm = pickMatch(teamMx[f.id]);
         return '<div class="sp-page"><div class="sp-league">' + escHtml(f.name || "") + ' · ' + escHtml(nameOf(f.comp)) + '</div>'
           + (pm ? matchRow(pm.m, pm.kind) : '')
           + (snip || ('<div class="sv-soon">' + t("sport.standings.soon") + '</div>')) + '</div>';
       }
-      const pick = pickMatch(boards[f.comp]);
-      return '<div class="sp-page"><div class="sp-league">' + escHtml(nameOf(f.comp)) + '</div>'
+      // ligue (suivie OU compétition par défaut) — comp dérivée de la clé
+      const comp = k.slice(1);
+      const pick = pickMatch(boards[comp]);
+      return '<div class="sp-page"><div class="sp-league">' + escHtml(nameOf(comp)) + '</div>'
         + (pick ? matchRow(pick.m, pick.kind) : '<div class="empty">' + t("sport.noMatch") + '</div>') + '</div>';
     }
 
     function ensurePager() {
       if (pager) return;
       pager = makePager(card, host, { pageSize: 1, renderSlice: (slice) => slice.length ? compactPage(slice[0]) : "" });
-      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow")) return; if ((footballOn() && follows().length) || (basketOn() && basketFollows().length) || (tennisOn() && tennisFollows().length) || f1On()) openView(); });
+      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow")) return; if (footballDefault() || (footballOn() && follows().length) || (basketOn() && basketFollows().length) || (tennisOn() && tennisFollows().length) || f1On()) openView(); });
     }
     function startRotation() {
       if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
@@ -2768,18 +2802,20 @@
       const hasFb = footballOn() && follows().length;
       const hasBk = basketOn() && basketFollows().length;
       const hasTn = tennisOn() && tennisFollows().length;
-      if (!hasFb && !hasBk && !hasTn && !f1On()) {
+      const dflt = footballDefault();
+      const dcomps = dflt ? defaultComps() : [];
+      if (!hasFb && !hasBk && !hasTn && !f1On() && !dcomps.length) {
         if (meta) meta.textContent = "";
-        pager.message('<div class="empty">' + t("empty.sport") + '</div>');
+        pager.message('<div class="empty">' + (dflt ? t("sport.noToday") : t("empty.sport")) + '</div>');
         if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
         return;
       }
-      let keys = (footballOn() ? orderedFollows().map(keyOf) : []);
+      let keys = dflt ? dcomps.map((c) => "L" + c) : (footballOn() ? orderedFollows().map(keyOf) : []);
       if (basketOn()) basketFollows().forEach((f) => keys.push("B" + f.comp));
       if (tennisOn()) tennisFollows().forEach((f) => keys.push("N" + f.comp));
       if (f1On()) keys.push("F1");
       keys = keys.slice(0, 9); // §4.1 — 9 pages max dans le compact
-      if (meta) meta.textContent = keys.length + (LANG === "fr" ? (keys.length > 1 ? " suivis" : " suivi") : (keys.length > 1 ? " follows" : " follow"));
+      if (meta) meta.textContent = dflt ? (LANG === "fr" ? "Aujourd'hui" : "Today") : keys.length + (LANG === "fr" ? (keys.length > 1 ? " suivis" : " suivi") : (keys.length > 1 ? " follows" : " follow"));
       pager.set(keys);
       startRotation();
       computeHeadline();
@@ -2787,7 +2823,8 @@
     // §3.8 — expose a LIVE followed match for the hero "At a Glance" slider
     function computeHeadline() {
       let cands = [];
-      if (footballOn()) {
+      if (footballDefault()) defaultComps().forEach((c) => { cands = cands.concat(boards[c] || []); });
+      else if (footballOn()) {
         leagueFollows().forEach((f) => { cands = cands.concat(boards[f.comp] || []); });
         teamFollows().forEach((f) => { cands = cands.concat(teamMx[f.id] || []); });
       }
@@ -2860,7 +2897,9 @@
         + (matches.length ? '' : '<div class="sv-soon">' + t("sport.noMatch") + '</div>') + '</div>';
     }
     function openView() {
-      let sections = (footballOn() ? orderedFollows().map((f) => f.type === "team" ? teamSection(f) : leagueSection(f)).join("") : "");
+      let sections = footballDefault()
+        ? defaultComps().map(defaultSection).join("")
+        : (footballOn() ? orderedFollows().map((f) => f.type === "team" ? teamSection(f) : leagueSection(f)).join("") : "");
       if (basketOn()) sections += basketFollows().map(basketSection).join("");
       if (tennisOn()) sections += tennisFollows().map(tennisSection).join("");
       if (f1On()) sections += f1Section();
@@ -2978,22 +3017,22 @@
      EN DIRECT (exposé par le widget Sport via window.__ntHeadline).
      ============================================================ */
   (function glance() {
-    const g = $("#glance"); const normal = document.querySelector(".hero-normal");
-    if (!g || !normal) return;
-    let showing = "normal", tick = 0;
+    const hero = document.querySelector(".hero"); const g = $("#glance");
+    if (!hero || !g) return;
+    let on = false, tick = 0;
     const nm = (s) => escHtml(s.team.shortName || s.team.name || "?");
     function fmt(h) {
       const sc = (h.home.score != null && h.away.score != null) ? (h.home.score + " – " + h.away.score) : "–";
       return '<div class="gl-tag">● ' + (LANG === "fr" ? "DIRECT" : "LIVE") + (h.minute ? " " + h.minute + "'" : "") + '</div>'
         + '<div class="gl-score"><span class="gl-team">' + nm(h.home) + '</span><b class="tnum">' + sc + '</b><span class="gl-team">' + nm(h.away) + '</span></div>';
     }
-    function setMode(m) { if (m === showing) return; showing = m; normal.hidden = (m === "glance"); g.hidden = (m !== "glance"); }
+    function setOn(v) { if (v === on) return; on = v; hero.classList.toggle("glance-on", v); }
     setInterval(() => {
       const h = window.__ntHeadline;
-      if (!h) { setMode("normal"); tick = 0; return; }
+      if (!h) { setOn(false); tick = 0; return; }
       g.innerHTML = fmt(h);
       tick++;
-      setMode(Math.floor(tick / 8) % 2 === 1 ? "glance" : "normal"); // 8s normal / 8s live
+      setOn(Math.floor(tick / 8) % 2 === 1); // 8s horloge / 8s score live
     }, 1000);
   })();
 

@@ -1293,7 +1293,9 @@ html[data-theme="light"] .sv-league{ background:var(--card); border-color:rgba(2
 .f1-srow:first-of-type{ border-top:0; }
 
 /* §3.8 At a Glance — live score banner alternating with the clock */
-.hero-glance{ display:flex; flex-direction:column; justify-content:center; gap:8px; min-height:118px; }
+.hero-glance{ display:none; flex-direction:column; justify-content:center; gap:8px; min-height:118px; }
+.hero.glance-on .hero-normal{ display:none; }
+.hero.glance-on .hero-glance{ display:flex; }
 .gl-tag{ font-size:13px; font-weight:700; letter-spacing:.06em; color:var(--down); }
 .gl-score{ display:flex; align-items:center; gap:18px; font-size:30px; font-weight:600; color:var(--ink); }
 .gl-score b{ font-size:34px; color:var(--ink); }

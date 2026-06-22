@@ -8,7 +8,7 @@
 import { storage } from "./core/storage.js";
 import { buildRegistry } from "./providers/index.js";
 import { formLabel } from "./providers/types.js";
-import { COMP_TO_ESPN, FOOTBALL_LEAGUES, leagueName, BASKET_TO_ESPN, BASKET_LEAGUES, basketName, TENNIS_TOURS, tennisName, tennisId } from "./providers/leagues.js";
+import { COMP_TO_ESPN, FOOTBALL_LEAGUES, leagueName, DEFAULT_FOOTBALL, BASKET_TO_ESPN, BASKET_LEAGUES, basketName, TENNIS_TOURS, tennisName, tennisId } from "./providers/leagues.js";
 
 const PROXY_BASE = "https://naerod.com";
 const httpGet = async (url) => {
@@ -151,6 +151,7 @@ window.NT = {
   formLabel,
   FOOTBALL_LEAGUES,
   leagueName,
+  DEFAULT_FOOTBALL,
   BASKET_LEAGUES,
   basketName,
   basketScoreboard,

@@ -3,6 +3,12 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.13.0] — 2026-06-22 — Affiches du jour par défaut (§4.5)
+- **Football activé sans aucun suivi → affiches du jour** : le widget montre les matchs du jour des grandes compétitions, **majors en cours en priorité**. La **Coupe du monde** et l'**Euro** sont ajoutés (ESPN `fifa.world` / `uefa.euro`). Ex. « Coupe du monde — France 0–0 Iraq · En direct » sans rien configurer.
+- Compact + vue plein écran en mode défaut (live > imminent > récent), triés par pertinence.
+- **Fix** : `compactPage` rendait une page vide pour une ligue non « suivie » (clé dérivée de la compétition désormais).
+- **Fix** : barre At a Glance — le bandeau live s'alternait mal (`.hero-glance` écrasait `hidden`) → bascule par classe `glance-on`.
+
 ## [0.12.0] — 2026-06-22 — Cœur V1 complet
 - **Cap à 9 pages** dans le widget compact (§4.1).
 - ROADMAP mise à jour : Phase A + Phase B faites ; bornés/différés documentés (tennis rankings/draw, basket standings, bracket §4.5, habillage événementiel, F1 live OpenF1).
