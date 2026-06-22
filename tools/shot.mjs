@@ -73,6 +73,7 @@ if (args.onboard != null) {
   await page.evaluate(() => { window.Onboarding && window.Onboarding.start(); });
   await page.waitForTimeout(400);
   for (let i = 0; i < Number(args.onboard); i++) { await page.click(".ob-next").catch(() => {}); await page.waitForTimeout(350); }
+  if (args.obfoot) { await page.click('.ob-chip:has-text("Football")').catch(() => {}); await page.waitForTimeout(600); }
   await page.waitForTimeout(600);
 }
 

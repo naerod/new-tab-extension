@@ -1181,8 +1181,12 @@ img.fav-dark{ filter:brightness(0) invert(1); }
     background:var(--bg-2); border:1px solid var(--line); border-radius:10px;
     font-size:13.5px; color:var(--ink-2); transition:all .14s; user-select:none;
   }
-  .ob-chip input{ accent-color:var(--accent); width:15px; height:15px; flex:none; }
+  /* plus de case à cocher visible : sélection = pilule orange (.on) + icône/logo */
+  .ob-chip input{ position:absolute; opacity:0; width:0; height:0; margin:0; pointer-events:none; }
   .ob-chip.on{ color:var(--ink); border-color:var(--accent-line); background:var(--accent-soft); }
+  .ob-ic{ display:inline-flex; align-items:center; justify-content:center; width:22px; flex:none; font-size:17px; line-height:1; }
+  .ob-logo{ width:20px; height:20px; object-fit:contain; }
+  .ob-chip.on .ob-ic{ filter:none; }
   .ob-dots{ display:flex; gap:6px; justify-content:center; margin:18px 0 16px; }
   .ob-dots i{ width:6px; height:6px; border-radius:50%; background:var(--ink-4); transition:all .2s; }
   .ob-dots i.on{ width:18px; border-radius:3px; background:var(--accent); }

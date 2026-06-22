@@ -3169,14 +3169,19 @@
       body.appendChild(el("p", "ob-sub", t("ob.sports.sub")));
       if (!state.sports) state.sports = [];
       if (!state.leagues) state.leagues = [];
-      const SPORTS = [{ k: "football", t: t("sport.football") }, { k: "f1", t: (LANG === "fr" ? "Formule 1" : "Formula 1") }];
+      const SPORTS = [
+        { k: "football", t: t("sport.football"), emoji: "⚽" },
+        { k: "f1", t: (LANG === "fr" ? "Formule 1" : "Formula 1"), emoji: "🏎️" },
+        { k: "basketball", t: (LANG === "fr" ? "Basket" : "Basketball"), emoji: "🏀" },
+        { k: "tennis", t: "Tennis", emoji: "🎾" },
+      ];
       const grid = el("div", "ob-grid");
       SPORTS.forEach((s) => {
         const on = state.sports.indexOf(s.k) !== -1;
         const lbl = el("label", "ob-chip" + (on ? " on" : ""));
         const c = el("input"); c.type = "checkbox"; c.checked = on;
         c.addEventListener("change", () => { if (c.checked) { if (state.sports.indexOf(s.k) === -1) state.sports.push(s.k); } else state.sports = state.sports.filter((x) => x !== s.k); render(); });
-        lbl.appendChild(c); lbl.appendChild(el("span", null, s.t)); grid.appendChild(lbl);
+        lbl.appendChild(c); lbl.appendChild(el("span", "ob-ic", s.emoji)); lbl.appendChild(el("span", null, s.t)); grid.appendChild(lbl);
       });
       body.appendChild(grid);
       if (state.sports.indexOf("football") !== -1) {
@@ -3188,7 +3193,9 @@
           const lbl = el("label", "ob-chip" + (on ? " on" : ""));
           const c = el("input"); c.type = "checkbox"; c.checked = on;
           c.addEventListener("change", () => { if (c.checked) { if (state.leagues.indexOf(l.code) === -1) state.leagues.push(l.code); } else state.leagues = state.leagues.filter((x) => x !== l.code); lbl.classList.toggle("on", c.checked); });
-          lbl.appendChild(c); lbl.appendChild(el("span", null, l.name)); lg.appendChild(lbl);
+          const ic = el("span", "ob-ic");
+          if (l.logo) { const img = el("img", "ob-logo"); img.src = l.logo; img.alt = ""; img.addEventListener("error", () => { ic.textContent = "⚽"; }); ic.appendChild(img); } else ic.textContent = "⚽";
+          lbl.appendChild(c); lbl.appendChild(ic); lbl.appendChild(el("span", null, l.name)); lg.appendChild(lbl);
         });
         body.appendChild(lg);
       }

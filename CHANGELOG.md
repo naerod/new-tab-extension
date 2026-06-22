@@ -3,6 +3,12 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.15.0] — 2026-06-22 — Fini les cases à cocher : emojis + logos
+- **Suppression des cases à cocher** dans l'onboarding (les pilules `.on` orange suffisent ; case masquée).
+- **Sports en emoji** : ⚽ Football · 🏎️ Formule 1 · 🏀 Basket · 🎾 Tennis (+ basket/tennis désormais proposés à l'onboarding).
+- **Compétitions en logo** : chaque ligue affiche son **emblème** (football-data crests), repli ⚽ si indispo.
+- Les listes de réglages (`cfg-check`) étaient déjà en pilules sans case → cohérent partout.
+
 ## [0.14.0] — 2026-06-22 — Contenu par défaut riche + couleur (sport)
 - **Mode défaut « For You »** : les 9 pages se remplissent d'un **mix matchs + actualités sport/esport** (Google News RSS, requêtes foot + esport), **équipe de France en priorité**. Ex. France-Iraq en une + une actu type « Falcons 3-0 Furia (major) ».
 - **Couleur / drapeaux / logos** : écussons de club et **drapeaux nationaux** ajoutés dans les lignes de match (compact + vue) — gros gain visuel, notamment Coupe du monde.
