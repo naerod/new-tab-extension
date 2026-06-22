@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.12.0] — 2026-06-22 — Cœur V1 complet
+- **Cap à 9 pages** dans le widget compact (§4.1).
+- ROADMAP mise à jour : Phase A + Phase B faites ; bornés/différés documentés (tennis rankings/draw, basket standings, bracket §4.5, habillage événementiel, F1 live OpenF1).
+
 ## [0.11.0] — 2026-06-22 — Tennis (ATP / WTA, bornée)
 - **Tennis** activable dans ⚙ : suivre les circuits **ATP / WTA** (TheSportsDB, clé publique). Compact + vue = événements (live/à venir/récents). **Classements ATP/WTA et tableau (draw) différés** (non dispo en clé gratuite — §4.4 « contenu délégué »).
 

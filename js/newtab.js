@@ -2774,10 +2774,11 @@
         if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
         return;
       }
-      const keys = (footballOn() ? orderedFollows().map(keyOf) : []);
+      let keys = (footballOn() ? orderedFollows().map(keyOf) : []);
       if (basketOn()) basketFollows().forEach((f) => keys.push("B" + f.comp));
       if (tennisOn()) tennisFollows().forEach((f) => keys.push("N" + f.comp));
       if (f1On()) keys.push("F1");
+      keys = keys.slice(0, 9); // §4.1 — 9 pages max dans le compact
       if (meta) meta.textContent = keys.length + (LANG === "fr" ? (keys.length > 1 ? " suivis" : " suivi") : (keys.length > 1 ? " follows" : " follow"));
       pager.set(keys);
       startRotation();
