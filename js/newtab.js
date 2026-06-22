@@ -604,6 +604,11 @@
         }
         return r;
       }
+      if (f.type === "multiselect") {
+        const r = row(lab(f), null, true);
+        r.appendChild(multiSelect({ items: f.items, isSelected: f.isSelected, onToggle: f.onToggle, placeholder: f.placeholder }));
+        return r;
+      }
       if (f.type === "button") {
         const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (f.primary ? " primary" : "");
         b.textContent = f.label; b.addEventListener("click", () => f.onClick());
@@ -708,6 +713,58 @@
       count() { return npages(); },
       page() { return page; },
     };
+  }
+
+  /* ============================================================
+     MULTISELECT — composant réutilisable façon Discord (tags retirables +
+     menu déroulant avec recherche + logos). Utilisé par l'onboarding ET les
+     réglages des widgets. opts: { items:[{value,label,logo,emoji}], isSelected(v),
+     onToggle(v), placeholder }.
+     ============================================================ */
+  const MS_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  function multiSelect(opts) {
+    const mk = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+    const icon = (it) => {
+      const ic = mk("span", "ms-ic");
+      if (it.logo) { const img = mk("img"); img.src = it.logo; img.alt = ""; img.addEventListener("error", () => { ic.textContent = it.emoji || "•"; }); ic.appendChild(img); }
+      else ic.textContent = it.emoji || "•";
+      return ic;
+    };
+    const root = mk("div", "ms"), field = mk("div", "ms-field"), tags = mk("div", "ms-tags");
+    const input = mk("input", "ms-input"); input.type = "text"; input.placeholder = opts.placeholder || (LANG === "fr" ? "Rechercher…" : "Search…");
+    const caret = mk("span", "ms-caret", SVGI.chevD);
+    field.appendChild(tags); field.appendChild(input); field.appendChild(caret);
+    const menu = mk("div", "ms-menu");
+    root.appendChild(field); root.appendChild(menu);
+    const setOpen = (v) => { root.classList.toggle("open", v); if (v) paintMenu(input.value); };
+    function paintTags() {
+      tags.innerHTML = "";
+      opts.items.filter((it) => opts.isSelected(it.value)).forEach((it) => {
+        const tg = mk("span", "ms-tag"); tg.appendChild(icon(it)); tg.appendChild(mk("span", "ms-tag-l", escHtml(it.label)));
+        const x = mk("button", "ms-x"); x.type = "button"; x.innerHTML = SVGI.close;
+        x.addEventListener("click", (e) => { e.stopPropagation(); opts.onToggle(it.value); paintTags(); paintMenu(input.value); });
+        tg.appendChild(x); tags.appendChild(tg);
+      });
+    }
+    function paintMenu(q) {
+      const f = (q || "").trim().toLowerCase();
+      const list = opts.items.filter((it) => !f || it.label.toLowerCase().indexOf(f) !== -1);
+      menu.innerHTML = "";
+      if (!list.length) { menu.appendChild(mk("div", "ms-empty", LANG === "fr" ? "Aucun résultat" : "No result")); return; }
+      list.forEach((it) => {
+        const on = opts.isSelected(it.value);
+        const o = mk("div", "ms-opt" + (on ? " on" : "")); o.appendChild(icon(it)); o.appendChild(mk("span", "ms-opt-l", escHtml(it.label)));
+        o.appendChild(mk("span", "ms-check", on ? MS_CHECK : ""));
+        o.addEventListener("mousedown", (e) => { e.preventDefault(); opts.onToggle(it.value); paintTags(); paintMenu(input.value); });
+        menu.appendChild(o);
+      });
+    }
+    field.addEventListener("click", () => { input.focus(); setOpen(true); });
+    input.addEventListener("input", () => { setOpen(true); paintMenu(input.value); });
+    input.addEventListener("focus", () => setOpen(true));
+    document.addEventListener("click", (e) => { if (!root.contains(e.target)) setOpen(false); });
+    paintTags();
+    return root;
   }
 
   /* ============================================================
@@ -2957,29 +3014,25 @@
     function openSettings() {
       if (!window.NT) return;
       const leagues = window.NT.FOOTBALL_LEAGUES || [];
-      const cur = follows();
-      const availLeagues = leagues.filter((l) => !cur.some((f) => f.type !== "team" && f.comp === l.code));
       const fields = [
         { type: "toggle", label: t("sport.football"), value: footballOn(),
           onChange: (v) => { cfg.sports = v ? Array.from(new Set(cfg.sports.concat("football"))) : cfg.sports.filter((s) => s !== "football"); saveCfg(); render(); openSettings(); } },
       ];
       if (footballOn()) {
-        fields.push({ type: "list", label: t("sport.follows"),
-          items: cur.map((f) => ({ label: f.type === "team" ? (f.name || f.id) : nameOf(f.comp), sub: f.type === "team" ? nameOf(f.comp) : (LANG === "fr" ? "Ligue" : "League") })),
-          move: (from, to) => { const x = cfg.follows.football.splice(from, 1)[0]; cfg.follows.football.splice(to, 0, x); saveCfg(); render(); },
-          onRemove: (it, i) => { cfg.follows.football.splice(i, 1); saveCfg(); refreshAll(); } });
-        fields.push({ type: "select", label: t("sport.addLeague"), value: "",
-          options: [{ v: "", t: t("sport.pick") }].concat(availLeagues.map((l) => ({ v: l.code, t: l.name }))),
-          onChange: (code) => { if (!code) return; cfg.follows.football.push({ type: "league", comp: code }); saveCfg(); refreshAll(); openSettings(); } });
+        // Ligues — multiselect façon Discord (recherche + tags + logos)
+        fields.push({ type: "multiselect", label: t("sport.leagues"), placeholder: t("ob.sports.leaguesPh"),
+          items: leagues.map((l) => ({ value: l.code, label: l.name, logo: l.logo, emoji: "⚽" })),
+          isSelected: (v) => leagueFollows().some((f) => f.comp === v),
+          onToggle: (v) => { const arr = cfg.follows.football; const i = arr.findIndex((f) => f.type !== "team" && f.comp === v); if (i === -1) arr.push({ type: "league", comp: v }); else arr.splice(i, 1); saveCfg(); refreshAll(); } });
+        // Équipes — choisir une ligue puis multiselect des équipes (recherche)
         fields.push({ type: "select", label: t("sport.addTeamLeague"), value: pendingTeamLeague || "",
           options: [{ v: "", t: t("sport.pick") }].concat(leagues.map((l) => ({ v: l.code, t: l.name }))),
           onChange: async (code) => { pendingTeamLeague = code || null; if (code && !teamsByComp[code]) teamsByComp[code] = await window.NT.footballTeams(code); openSettings(); } });
         if (pendingTeamLeague && teamsByComp[pendingTeamLeague]) {
-          const taken = teamFollows().map((f) => String(f.id));
-          const opts = teamsByComp[pendingTeamLeague].filter((tm) => taken.indexOf(String(tm.id)) === -1);
-          fields.push({ type: "select", label: t("sport.addTeam"), value: "",
-            options: [{ v: "", t: t("sport.pick") }].concat(opts.map((tm) => ({ v: String(tm.id), t: tm.shortName || tm.name }))),
-            onChange: (id) => { if (!id) return; const tm = teamsByComp[pendingTeamLeague].find((x) => String(x.id) === id); cfg.follows.football.push({ type: "team", id: String(id), name: tm ? (tm.shortName || tm.name) : id, comp: pendingTeamLeague, crest: tm ? tm.crest : "" }); pendingTeamLeague = null; saveCfg(); refreshAll(); openSettings(); } });
+          fields.push({ type: "multiselect", label: t("sport.addTeam"), placeholder: (LANG === "fr" ? "Rechercher une équipe…" : "Search a team…"),
+            items: teamsByComp[pendingTeamLeague].map((tm) => ({ value: String(tm.id), label: tm.shortName || tm.name, logo: tm.crest, emoji: "⚽" })),
+            isSelected: (v) => teamFollows().some((f) => String(f.id) === String(v)),
+            onToggle: (v) => { const arr = cfg.follows.football; const i = arr.findIndex((f) => f.type === "team" && String(f.id) === String(v)); if (i === -1) { const tm = teamsByComp[pendingTeamLeague].find((x) => String(x.id) === String(v)); arr.push({ type: "team", id: String(v), name: tm ? (tm.shortName || tm.name) : v, comp: pendingTeamLeague, crest: tm ? tm.crest : "" }); } else arr.splice(i, 1); saveCfg(); refreshAll(); } });
         }
         fields.push({ type: "stepper", label: t("sport.rotate"), sub: t("sport.rotate.sub"), value: cfg.sport.rotate, min: 0, max: 120,
           onChange: (v) => { cfg.sport.rotate = v; saveCfg(); startRotation(); } });
@@ -2987,35 +3040,25 @@
           options: [{ v: "auto", t: t("sport.mode.auto") }, { v: "manual", t: t("sport.mode.manual") }],
           onChange: (v) => { cfg.sport.mode = v; saveCfg(); render(); } });
       }
-      // Basket (toggle + ligues NBA/WNBA)
+      // Basket (toggle + multiselect ligues NBA/WNBA)
       fields.push({ type: "toggle", label: LANG === "fr" ? "Basket" : "Basketball", value: basketOn(),
         onChange: (v) => { cfg.sports = v ? Array.from(new Set(cfg.sports.concat("basketball"))) : cfg.sports.filter((s) => s !== "basketball"); if (v && !cfg.follows.basketball) cfg.follows.basketball = []; saveCfg(); refreshAll(); openSettings(); } });
       if (basketOn()) {
         const bl = (window.NT && window.NT.BASKET_LEAGUES) || [];
-        const curB = basketFollows();
-        fields.push({ type: "list", label: LANG === "fr" ? "Ligues basket" : "Basket leagues",
-          items: curB.map((f) => ({ label: basketNameOf(f.comp) })),
-          move: (from, to) => { const x = cfg.follows.basketball.splice(from, 1)[0]; cfg.follows.basketball.splice(to, 0, x); saveCfg(); render(); },
-          onRemove: (it, i) => { cfg.follows.basketball.splice(i, 1); saveCfg(); refreshAll(); } });
-        const availB = bl.filter((l) => !curB.some((f) => f.comp === l.code));
-        fields.push({ type: "select", label: LANG === "fr" ? "Ajouter une ligue basket" : "Add basket league", value: "",
-          options: [{ v: "", t: t("sport.pick") }].concat(availB.map((l) => ({ v: l.code, t: l.name }))),
-          onChange: (code) => { if (!code) return; if (!cfg.follows.basketball) cfg.follows.basketball = []; cfg.follows.basketball.push({ type: "league", comp: code }); saveCfg(); refreshAll(); openSettings(); } });
+        fields.push({ type: "multiselect", label: LANG === "fr" ? "Ligues basket" : "Basket leagues", placeholder: t("sport.pick"),
+          items: bl.map((l) => ({ value: l.code, label: l.name, logo: l.logo, emoji: "🏀" })),
+          isSelected: (v) => basketFollows().some((f) => f.comp === v),
+          onToggle: (v) => { if (!cfg.follows.basketball) cfg.follows.basketball = []; const arr = cfg.follows.basketball; const i = arr.findIndex((f) => f.comp === v); if (i === -1) arr.push({ type: "league", comp: v }); else arr.splice(i, 1); saveCfg(); refreshAll(); } });
       }
-      // Tennis (toggle + tours ATP/WTA — événements)
+      // Tennis (toggle + multiselect circuits ATP/WTA)
       fields.push({ type: "toggle", label: "Tennis", value: tennisOn(),
         onChange: (v) => { cfg.sports = v ? Array.from(new Set(cfg.sports.concat("tennis"))) : cfg.sports.filter((s) => s !== "tennis"); if (v && !cfg.follows.tennis) cfg.follows.tennis = []; saveCfg(); refreshAll(); openSettings(); } });
       if (tennisOn()) {
         const tt = (window.NT && window.NT.TENNIS_TOURS) || [];
-        const curT = tennisFollows();
-        fields.push({ type: "list", label: LANG === "fr" ? "Circuits tennis" : "Tennis tours",
-          items: curT.map((f) => ({ label: tennisNameOf(f.comp) })),
-          move: (from, to) => { const x = cfg.follows.tennis.splice(from, 1)[0]; cfg.follows.tennis.splice(to, 0, x); saveCfg(); render(); },
-          onRemove: (it, i) => { cfg.follows.tennis.splice(i, 1); saveCfg(); refreshAll(); } });
-        const availT = tt.filter((l) => !curT.some((f) => f.comp === l.code));
-        fields.push({ type: "select", label: LANG === "fr" ? "Ajouter un circuit" : "Add a tour", value: "",
-          options: [{ v: "", t: t("sport.pick") }].concat(availT.map((l) => ({ v: l.code, t: l.name }))),
-          onChange: (code) => { if (!code) return; if (!cfg.follows.tennis) cfg.follows.tennis = []; cfg.follows.tennis.push({ type: "tour", comp: code }); saveCfg(); refreshAll(); openSettings(); } });
+        fields.push({ type: "multiselect", label: LANG === "fr" ? "Circuits tennis" : "Tennis tours", placeholder: t("sport.pick"),
+          items: tt.map((l) => ({ value: l.code, label: l.name, emoji: "🎾" })),
+          isSelected: (v) => tennisFollows().some((f) => f.comp === v),
+          onToggle: (v) => { if (!cfg.follows.tennis) cfg.follows.tennis = []; const arr = cfg.follows.tennis; const i = arr.findIndex((f) => f.comp === v); if (i === -1) arr.push({ type: "tour", comp: v }); else arr.splice(i, 1); saveCfg(); refreshAll(); } });
       }
       // F1 (toggle indépendant + pilote suivi optionnel)
       fields.push({ type: "toggle", label: LANG === "fr" ? "Formule 1" : "Formula 1", value: f1On(),
@@ -3163,60 +3206,6 @@
       });
       body.appendChild(grid);
     }
-    // Multi-select façon Discord : tags retirables + menu déroulant avec recherche.
-    // items: [{value,label,logo,emoji}] ; isSelected(v) ; onToggle(v) ; placeholder.
-    const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-    function msIcon(it) {
-      const ic = el("span", "ms-ic");
-      if (it.logo) { const img = el("img"); img.src = it.logo; img.alt = ""; img.addEventListener("error", () => { ic.textContent = it.emoji || "•"; }); ic.appendChild(img); }
-      else ic.textContent = it.emoji || "•";
-      return ic;
-    }
-    function multiSelect(opts) {
-      const root = el("div", "ms");
-      const field = el("div", "ms-field");
-      const tags = el("div", "ms-tags");
-      const input = el("input", "ms-input"); input.type = "text"; input.placeholder = opts.placeholder || (LANG === "fr" ? "Rechercher…" : "Search…");
-      const caret = el("span", "ms-caret"); caret.innerHTML = SVGI.chevD;
-      field.appendChild(tags); field.appendChild(input); field.appendChild(caret);
-      const menu = el("div", "ms-menu");
-      root.appendChild(field); root.appendChild(menu);
-      function setOpen(v) { root.classList.toggle("open", v); if (v) { paintMenu(input.value); } }
-      function paintTags() {
-        tags.innerHTML = "";
-        opts.items.filter((it) => opts.isSelected(it.value)).forEach((it) => {
-          const tg = el("span", "ms-tag");
-          tg.appendChild(msIcon(it));
-          tg.appendChild(el("span", "ms-tag-l", escHtml(it.label)));
-          const x = el("button", "ms-x"); x.type = "button"; x.innerHTML = SVGI.close;
-          x.addEventListener("click", (e) => { e.stopPropagation(); opts.onToggle(it.value); paintTags(); paintMenu(input.value); });
-          tg.appendChild(x); tags.appendChild(tg);
-        });
-      }
-      function paintMenu(q) {
-        const f = (q || "").trim().toLowerCase();
-        const list = opts.items.filter((it) => !f || it.label.toLowerCase().indexOf(f) !== -1);
-        menu.innerHTML = "";
-        if (!list.length) { menu.appendChild(el("div", "ms-empty", LANG === "fr" ? "Aucun résultat" : "No result")); return; }
-        list.forEach((it) => {
-          const on = opts.isSelected(it.value);
-          const o = el("div", "ms-opt" + (on ? " on" : ""));
-          o.appendChild(msIcon(it));
-          o.appendChild(el("span", "ms-opt-l", escHtml(it.label)));
-          const ck = el("span", "ms-check"); ck.innerHTML = on ? CHECK : "";
-          o.appendChild(ck);
-          o.addEventListener("mousedown", (e) => { e.preventDefault(); opts.onToggle(it.value); paintTags(); paintMenu(input.value); });
-          menu.appendChild(o);
-        });
-      }
-      field.addEventListener("click", () => { input.focus(); setOpen(true); });
-      input.addEventListener("input", () => { setOpen(true); paintMenu(input.value); });
-      input.addEventListener("focus", () => setOpen(true));
-      document.addEventListener("click", (e) => { if (!root.contains(e.target)) setOpen(false); });
-      paintTags();
-      return root;
-    }
-
     // §3.7 — choix des sports (multi-select) + sections dynamiques (ligues football)
     function stepSports(body) {
       body.appendChild(el("h2", "ob-title", t("ob.sports.title")));

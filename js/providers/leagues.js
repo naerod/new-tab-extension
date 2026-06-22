@@ -30,8 +30,8 @@ export const leagueName = (code) => (FOOTBALL_LEAGUES.find((l) => l.code === cod
 
 // Basketball — keyless ESPN scoreboards (matches only ; standings later).
 export const BASKET_LEAGUES = [
-  { code: "NBA", name: "NBA", espn: "basketball/nba" },
-  { code: "WNBA", name: "WNBA", espn: "basketball/wnba" },
+  { code: "NBA", name: "NBA", espn: "basketball/nba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png" },
+  { code: "WNBA", name: "WNBA", espn: "basketball/wnba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png" },
 ];
 export const BASKET_TO_ESPN = Object.fromEntries(BASKET_LEAGUES.map((l) => [l.code, l.espn]));
 export const basketName = (code) => (BASKET_LEAGUES.find((l) => l.code === code) || {}).name || code;
