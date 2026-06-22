@@ -8,16 +8,10 @@
 
 import { storage } from "./core/storage.js";
 import { buildRegistry } from "./providers/index.js";
+import { COMP_TO_ESPN } from "./providers/leagues.js";
 
 const ALARM = "poll";
 const PERIOD_MIN = 1; // chrome.alarms minimum is ~30s; 1 min is courteous to free APIs
-
-// competition code -> ESPN league path (extended in Phase B; keyless near-live)
-const COMP_TO_ESPN = {
-  PL: "soccer/eng.1", PD: "soccer/esp.1", BL1: "soccer/ger.1",
-  SA: "soccer/ita.1", FL1: "soccer/fra.1", DED: "soccer/ned.1",
-  CL: "soccer/uefa.champions", EL: "soccer/uefa.europa",
-};
 
 const httpGet = async (url) => {
   const r = await fetch(url);

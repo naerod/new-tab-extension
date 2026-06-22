@@ -141,12 +141,12 @@
       <div id="cs2"></div>
     </section>
 
-    <section class="card col4" id="f1Card">
+    <section class="card col4" id="sportCard">
       <div class="card-head" style="height: 24px">
-        <span class="card-title" data-i18n="card.f1">Formule 1</span>
-        <span class="head-right"><span class="meta" id="f1Meta"></span></span>
+        <span class="card-title" data-i18n="card.sport">Sport</span>
+        <span class="head-right"><span class="meta" id="sportMeta"></span></span>
       </div>
-      <div id="f1"></div>
+      <div id="sport"></div>
     </section>
 
     <section class="card col4" id="sitesCard">
@@ -158,6 +158,10 @@
     </section>
 
   </div>
+
+  <!-- ===================== FULL-SCREEN VIEW (mini-SPA, §3.4) ===================== -->
+  <section id="viewLayer" aria-live="polite"></section>
+
 </main>
 
 <!-- modal d'ajout de raccourci -->
@@ -219,5 +223,6 @@
 </div>
 
 <script src="js/newtab.js"></script>
+<script type="module" src="js/app-bridge.js"></script>
 </body>
 </html>

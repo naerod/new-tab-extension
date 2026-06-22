@@ -3,6 +3,20 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.2.0] — 2026-06-22 — Widget Sport (football) + routing plein écran
+### Ajouté
+- **A4 — Router mini-SPA** (`#viewLayer`) : clic sur un widget → vue plein écran (flèche retour, Échap pour fermer), barre de recherche épinglée. Accueil masqué pendant la vue.
+- **Phase B — widget Sport** (remplace l'ancien widget F1) :
+  - Multi-ligues football via **ESPN (sans clé)**, lecture **cache-first** (rempli par le service worker) avec repli fetch direct.
+  - Compact **paginé** (1 ligue/page, flèches) ; par ligue, match le plus pertinent : **en direct > prochain > dernier résultat**.
+  - **Vue plein écran** : par ligue, matchs en direct / à venir / résultats récents (classements via football-data à venir).
+  - Réglages ⚙ : activer **Football**, **ajouter/retirer/réordonner** les ligues suivies (11 ligues : PL, Liga, Bundesliga, Serie A, Ligue 1, Eredivisie, Primeira, Championship, LDC, Europa, Brasileirão).
+  - Config (`sports`, `follows`) écrite via la **couche storage** (sync) → vue par le service worker.
+- `js/app-bridge.js` (module) : passerelle exposant `window.NT` (storage, providers) au script classique ; `js/providers/leagues.js` (mapping ligues partagé SW/page).
+
+### Note
+- L'ancien **compte à rebours F1** est retiré pour l'instant ; **F1 reviendra comme sport** dans le widget Sport (phase B4, prochaine version), avec les 2 championnats + séances en heure Paris.
+
 ## [0.1.1] — 2026-06-22 — Thème clair inversé
 - **Fond de page blanc pur `#ffffff`** (plus de fond crème/grisâtre).
 - **Widgets sur une surface unique gris clair** (`#f4f2ee`) légèrement accentuée sur le blanc, avec ombre douce — inversion du fonctionnement précédent.

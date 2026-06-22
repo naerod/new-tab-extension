@@ -1195,3 +1195,37 @@ img.fav-dark{ filter:brightness(0) invert(1); }
     padding:11px 22px; font:inherit; font-size:14.5px; font-weight:600; cursor:pointer; transition:filter .15s;
   }
   .ob-next:hover{ filter:brightness(1.07); }
+
+/* ============================================================
+   SPORT WIDGET (compact) + ROUTER VIEW (full-screen, §3.4)
+   ============================================================ */
+/* compact widget */
+.sp-page{ display:flex; flex-direction:column; gap:10px; }
+.sp-league{ font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.sp-match{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px;
+  background:var(--card-2); border:1px solid var(--line); border-radius:var(--r-sm); }
+.sp-match.is-live{ border-color:var(--accent-line); }
+.sp-teams{ display:flex; align-items:center; gap:10px; min-width:0; flex:1; }
+.sp-team{ font-size:14px; font-weight:500; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:42%; }
+.sp-vs{ font-size:14px; font-weight:700; color:var(--ink); flex:none; min-width:46px; text-align:center; }
+.sp-meta{ flex:none; }
+.sp-time{ font-size:11.5px; color:var(--ink-3); }
+.sp-live{ font-size:11px; font-weight:700; color:var(--accent); letter-spacing:.03em; }
+
+/* full-screen view layer */
+#viewLayer{ display:none; }
+body.in-view .hero, body.in-view .bento{ display:none; }
+body.in-view #viewLayer{ display:block; animation:view-in .2s ease; }
+@keyframes view-in{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
+.view-head{ display:flex; align-items:center; gap:14px; margin:6px 0 22px; }
+.view-back{ width:38px; height:38px; flex:none; }
+.view-back svg{ width:20px; height:20px; }
+.view-title{ font-size:24px; font-weight:600; color:var(--ink); letter-spacing:-.01em; }
+.view-body{ display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:var(--gap); align-items:start; }
+.sv-league{ background:linear-gradient(180deg,var(--card-2),var(--card)); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; }
+html[data-theme="light"] .sv-league{ background:var(--card); border-color:rgba(28,26,22,.06); box-shadow:0 1px 2px rgba(28,26,22,.03), 0 2px 8px rgba(28,26,22,.05); }
+.sv-league h3{ font-size:16px; font-weight:600; color:var(--ink); margin-bottom:14px; }
+.sv-group{ margin-bottom:14px; }
+.sv-grouptitle{ font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin:0 0 8px; }
+.sv-group .sp-match{ margin-bottom:6px; }
+.sv-soon{ font-size:11.5px; color:var(--ink-4); margin-top:6px; }

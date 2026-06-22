@@ -12,5 +12,8 @@
 - **i18n EN complet** (les libellés des roues ⚙ par widget restent à traduire).
 - **Publication Chrome Web Store** : vérification Google des scopes Gmail/Calendar (restricted/sensitive), captures, politique de confidentialité, .zip, compte dev.
 
+## À retravailler plus tard (validé provisoirement)
+- **Thème clair** : validé en l'état par Dorian (v0.1.1 — fond blanc, widgets gris uniformes) mais **à raffiner ultérieurement** (polish visuel, passe WCAG complète).
+
 ## Décidé / non couvert par le brief
 - Toute décision hors périmètre est consignée dans `docs/DECISIONS.md`.

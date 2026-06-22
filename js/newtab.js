@@ -36,7 +36,7 @@
       // titres de cartes
       "card.shortcuts": "Raccourcis", "card.weather": "Météo", "card.stocks": "Bourse",
       "card.recent": "Récemment consultées", "card.agenda": "Agenda", "card.news": "Actualités",
-      "card.f1": "Formule 1", "card.sites": "Sites web",
+      "card.f1": "Formule 1", "card.sport": "Sport", "card.sites": "Sites web",
       // jours (abrégés, lun-dim)
       "wd.mon": "Lun", "wd.tue": "Mar", "wd.wed": "Mer", "wd.thu": "Jeu", "wd.fri": "Ven", "wd.sat": "Sam", "wd.sun": "Dim",
       // commun
@@ -98,6 +98,14 @@
       "sys.cpu": "CPU", "sys.ram": "RAM", "sys.disk": "Disque",
       "empty.sites.add": "Ajoute des sites à surveiller (⚙).",
       "empty.f1": "F1 indisponible.", "empty.gmail": "Gmail indisponible.",
+      // Widget Sport (Phase B)
+      "empty.sport": "Ajoute un sport via ⚙.",
+      "sport.football": "Football", "sport.addLeague": "Ajouter une ligue suivie",
+      "sport.leagues": "Ligues suivies", "sport.live": "En direct",
+      "sport.noMatch": "Aucun match à venir.", "sport.more": "Tous les matchs",
+      "sport.today": "Aujourd'hui", "sport.upcoming": "À venir", "sport.recent": "Résultats récents",
+      "sport.standings.soon": "Classements bientôt (via football-data).",
+      "sport.pick": "Choisir une ligue…",
     },
     en: {
       "title": "New tab",
@@ -108,7 +116,7 @@
       "aria.prevMonth": "Previous month", "aria.nextMonth": "Next month", "aria.iconType": "Icon type",
       "card.shortcuts": "Shortcuts", "card.weather": "Weather", "card.stocks": "Markets",
       "card.recent": "Recently visited", "card.agenda": "Calendar", "card.news": "News",
-      "card.f1": "Formula 1", "card.sites": "Websites",
+      "card.f1": "Formula 1", "card.sport": "Sport", "card.sites": "Websites",
       "wd.mon": "Mon", "wd.tue": "Tue", "wd.wed": "Wed", "wd.thu": "Thu", "wd.fri": "Fri", "wd.sat": "Sat", "wd.sun": "Sun",
       "common.cancel": "Cancel", "common.add": "Add", "common.save": "Save",
       "common.connect": "Connect", "common.refresh": "Refresh", "common.later": "Later",
@@ -162,6 +170,14 @@
       "sys.cpu": "CPU", "sys.ram": "RAM", "sys.disk": "Disk",
       "empty.sites.add": "Add sites to monitor (⚙).",
       "empty.f1": "F1 unavailable.", "empty.gmail": "Gmail unavailable.",
+      // Sport widget (Phase B)
+      "empty.sport": "Add a sport via ⚙.",
+      "sport.football": "Football", "sport.addLeague": "Add a followed league",
+      "sport.leagues": "Followed leagues", "sport.live": "Live",
+      "sport.noMatch": "No upcoming match.", "sport.more": "All matches",
+      "sport.today": "Today", "sport.upcoming": "Upcoming", "sport.recent": "Recent results",
+      "sport.standings.soon": "Standings coming soon (via football-data).",
+      "sport.pick": "Pick a league…",
     },
   };
 
@@ -610,7 +626,7 @@
       { k: "agenda", t: "Agenda", sel: "#agendaCard" },
       { k: "news", t: "Actualités", sel: "#news" },
       { k: "cs2", t: "CS2", sel: "#cs2Card" },
-      { k: "f1", t: "Formule 1", sel: "#f1Card" },
+      { k: "sport", t: "Sport", sel: "#sportCard" },
       { k: "sites", t: "Sites web", sel: "#sitesCard" },
     ];
     const disabled = () => CFG.get("layout", "disabled", []) || [];
@@ -742,7 +758,7 @@
     renderZones(); setInterval(tickZones, 15000);
 
     // panneau de réglages globaux
-    const WLBL = { shortcuts: "card.shortcuts", ia: "card.ia", homelab: "card.system", weather: "card.weather", stocks: "card.stocks", recent: "card.recent", agenda: "card.agenda", news: "card.news", f1: "card.f1", sites: "card.sites" };
+    const WLBL = { shortcuts: "card.shortcuts", ia: "card.ia", homelab: "card.system", weather: "card.weather", stocks: "card.stocks", recent: "card.recent", agenda: "card.agenda", news: "card.news", sport: "card.sport", sites: "card.sites" };
     const widgetLabel = (w) => WLBL[w.k] ? t(WLBL[w.k]) : w.t;
     function openSettings() {
       Settings.open(t("set.general"), [
@@ -2402,68 +2418,180 @@
   });
 
   /* ============================================================
-     FORMULE 1 — compte à rebours du prochain GP (API Jolpica/Ergast)
+     ROUTER — vues plein écran (mini-SPA, §3.4). Masque l'accueil, affiche une
+     vue avec flèche retour ; la barre de recherche reste épinglée (cf. CSS).
      ============================================================ */
-  CFG.ready(function f1() {
-    const host = $("#f1"); if (!host) return;
-    const dfmt = new Intl.DateTimeFormat(LOCALE(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-    let nRaces = CFG.get("f1", "count", 2);          // 1..3
-    let showCircuit = CFG.get("f1", "circuit", true);
-    let showDate = CFG.get("f1", "date", true);
-    let races = [], total = 0, timer = null;
-    const whenOf = (r) => new Date(r.date + "T" + (r.time || "13:00:00Z"));
-
-    function block(r) {
-      const when = whenOf(r);
-      const diff = when.getTime() - Date.now();
-      let cd;
-      if (diff <= 0 && diff > -4 * 3600 * 1000) cd = '<div class="f1-live">🏁 En cours</div>';
-      else {
-        const d = Math.floor(diff / 86400000), h = Math.floor((diff % 86400000) / 3600000), m = Math.floor((diff % 3600000) / 60000);
-        cd = `<div class="f1-cd">
-          <div class="u"><div class="n tnum">${d}</div><div class="l">jours</div></div>
-          <div class="u"><div class="n tnum">${h}</div><div class="l">h</div></div>
-          <div class="u"><div class="n tnum">${m}</div><div class="l">min</div></div>
-        </div>`;
-      }
-      const sub = [showCircuit ? escHtml(r.Circuit.circuitName) : "", showDate ? dfmt.format(when) : ""].filter(Boolean).join(" · ");
-      return `<div class="f1-race">
-          <div class="f1-gphead"><span class="f1-gp">${escHtml(r.raceName)}</span><span class="f1-rd">M${r.round}/${total}</span></div>
-          ${sub ? `<div class="f1-date">${sub}</div>` : ""}
-          ${cd}
-        </div>`;
+  const Router = (function () {
+    const layer = $("#viewLayer");
+    function open(title, bodyHtml, afterRender) {
+      if (!layer) return;
+      const back = LANG === "fr" ? "Retour" : "Back";
+      layer.innerHTML = '<div class="view-head">'
+        + '<button type="button" class="view-back gear" aria-label="' + back + '">' + SVGI.chevL + '</button>'
+        + '<h2 class="view-title">' + escHtml(title) + '</h2></div>'
+        + '<div class="view-body">' + bodyHtml + '</div>';
+      document.body.classList.add("in-view");
+      layer.querySelector(".view-back").addEventListener("click", close);
+      if (afterRender) afterRender(layer.querySelector(".view-body"));
+      try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
     }
+    function close() { document.body.classList.remove("in-view"); if (layer) layer.innerHTML = ""; }
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && document.body.classList.contains("in-view")) close(); });
+    return { open, close };
+  })();
+
+  /* ============================================================
+     SPORT — widget paginé multi-ligues (football d'abord, ESPN keyless via le
+     service worker / bridge). Vue plein écran via le Router. Bascule auto/manuel,
+     suivi multi-ligues. F1 / basket / tennis : phases suivantes (ROADMAP).
+     ============================================================ */
+  (function sport() {
+    const host = $("#sport"); if (!host) return;
+    const card = host.closest(".card");
+    const meta = $("#sportMeta");
+    const gear = card && card.querySelector(".head-right .gear");
+    if (gear) gear.setAttribute("aria-label", t("card.sport"));
+
+    const tfmt = new Intl.DateTimeFormat(LOCALE(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    let cfg = { sports: [], follows: { football: [] } };
+    let boards = {};   // league code -> Match[]
+    let pager = null;
+
+    const footballOn = () => cfg.sports.indexOf("football") !== -1;
+    const followed = () => (cfg.follows && cfg.follows.football) || [];
+    const nameOf = (code) => (window.NT && window.NT.leagueName) ? window.NT.leagueName(code) : code;
+    const teamLabel = (side) => escHtml(side.team.shortName || side.team.name || "?");
+    const scoreOf = (m) => (m.home.score != null && m.away.score != null) ? (m.home.score + " – " + m.away.score) : "";
+
+    function whenNT(cb) {
+      if (window.NT) cb(window.NT);
+      else window.addEventListener("nt:ready", () => cb(window.NT), { once: true });
+    }
+
+    // most relevant match for a league: live > next upcoming > last finished
+    function pickMatch(matches) {
+      const now = Date.now();
+      const live = matches.find((m) => m.status === "live");
+      if (live) return { m: live, kind: "live" };
+      const up = matches.filter((m) => m.status === "scheduled" && new Date(m.utcDate).getTime() > now - 2 * 3600e3)
+        .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+      if (up[0]) return { m: up[0], kind: "next" };
+      const fin = matches.filter((m) => m.status === "finished")
+        .sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate));
+      if (fin[0]) return { m: fin[0], kind: "last" };
+      return null;
+    }
+
+    function matchRow(m, kind) {
+      const score = scoreOf(m);
+      const mid = (kind === "finished" || kind === "last") ? (score || "–")
+        : kind === "live" ? (score || "–")
+        : "vs";
+      const right = kind === "live" ? '<span class="sp-live">' + t("sport.live") + (m.minute ? " " + m.minute + "'" : "") + '</span>'
+        : (kind === "finished" || kind === "last") ? ''
+        : '<span class="sp-time">' + escHtml(tfmt.format(new Date(m.utcDate))) + '</span>';
+      return '<div class="sp-match' + (kind === "live" ? " is-live" : "") + '">'
+        + '<div class="sp-teams"><span class="sp-team">' + teamLabel(m.home) + '</span>'
+        + '<span class="sp-vs tnum">' + mid + '</span>'
+        + '<span class="sp-team">' + teamLabel(m.away) + '</span></div>'
+        + (right ? '<div class="sp-meta">' + right + '</div>' : '') + '</div>';
+    }
+
+    function pageHtml(code) {
+      const pick = pickMatch(boards[code] || []);
+      const body = pick ? matchRow(pick.m, pick.kind) : '<div class="empty">' + t("sport.noMatch") + '</div>';
+      return '<div class="sp-page"><div class="sp-league">' + escHtml(nameOf(code)) + '</div>' + body + '</div>';
+    }
+
+    function ensurePager() {
+      if (pager) return;
+      pager = makePager(card, host, { pageSize: 1, renderSlice: (slice) => slice.length ? pageHtml(slice[0]) : "" });
+      host.addEventListener("click", (e) => {
+        if (e.target.closest(".pg-arrow")) return;
+        if (footballOn() && followed().length) openView();
+      });
+    }
+
     function render() {
-      const upcoming = races.filter((r) => whenOf(r).getTime() > Date.now() - 4 * 3600 * 1000).slice(0, nRaces);
-      if (!upcoming.length) { host.innerHTML = '<div class="empty">Saison terminée.</div>'; return; }
-      const meta = $("#f1Meta"); if (meta) meta.textContent = "Manche " + upcoming[0].round + "/" + total;
-      host.innerHTML = upcoming.map(block).join("");
+      ensurePager();
+      if (!footballOn() || !followed().length) {
+        if (meta) meta.textContent = "";
+        pager.message('<div class="empty">' + t("empty.sport") + '</div>');
+        return;
+      }
+      const codes = followed().map((f) => f.comp);
+      if (meta) meta.textContent = codes.length + (LANG === "fr" ? (codes.length > 1 ? " ligues" : " ligue") : (codes.length > 1 ? " leagues" : " league"));
+      pager.set(codes);
+    }
+
+    function openView() {
+      const sections = followed().map((f) => f.comp).map((code) => {
+        const matches = (boards[code] || []).slice().sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+        const now = Date.now();
+        const live = matches.filter((m) => m.status === "live");
+        const up = matches.filter((m) => m.status === "scheduled" && new Date(m.utcDate).getTime() > now);
+        const fin = matches.filter((m) => m.status === "finished").reverse();
+        const group = (label, arr, kind) => arr.length
+          ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
+        return '<div class="sv-league"><h3>' + escHtml(nameOf(code)) + '</h3>'
+          + group(t("sport.live"), live, "live")
+          + group(t("sport.upcoming"), up, "next")
+          + group(t("sport.recent"), fin, "last")
+          + '<div class="sv-soon">' + t("sport.standings.soon") + '</div></div>';
+      }).join("");
+      Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'));
+    }
+
+    function saveCfg() {
+      if (!window.NT) return;
+      window.NT.storage.setConfig("sports", cfg.sports);
+      window.NT.storage.setConfig("follows", cfg.follows);
+      window.NT.refresh();
+    }
+    async function refreshAll() { await loadBoards(); render(); }
+    async function loadBoards() {
+      if (!window.NT) return;
+      const codes = followed().map((f) => f.comp);
+      await Promise.all(codes.map(async (c) => { try { boards[c] = await window.NT.footballScoreboard(c); } catch (e) { boards[c] = boards[c] || []; } }));
     }
 
     function openSettings() {
-      Settings.open("Formule 1", [
-        { type: "stepper", label: "Courses à venir", value: nRaces, min: 1, max: 3,
-          onChange: (v) => { nRaces = v; CFG.set("f1", "count", v); render(); } },
-        { type: "toggle", label: "Afficher le circuit", value: showCircuit,
-          onChange: (v) => { showCircuit = v; CFG.set("f1", "circuit", v); render(); } },
-        { type: "toggle", label: "Afficher la date exacte", value: showDate,
-          onChange: (v) => { showDate = v; CFG.set("f1", "date", v); render(); } },
-      ]);
+      if (!window.NT) return;
+      const leagues = window.NT.FOOTBALL_LEAGUES || [];
+      const current = followed();
+      const available = leagues.filter((l) => !current.some((f) => f.comp === l.code));
+      const fields = [
+        { type: "toggle", label: t("sport.football"), value: footballOn(),
+          onChange: (v) => {
+            cfg.sports = v ? Array.from(new Set(cfg.sports.concat("football"))) : cfg.sports.filter((s) => s !== "football");
+            saveCfg(); render(); openSettings();
+          } },
+      ];
+      if (footballOn()) {
+        fields.push({ type: "list", label: t("sport.leagues"),
+          items: current.map((f) => ({ label: nameOf(f.comp) })),
+          move: (from, to) => { const x = cfg.follows.football.splice(from, 1)[0]; cfg.follows.football.splice(to, 0, x); saveCfg(); render(); },
+          onRemove: (it, i) => { cfg.follows.football.splice(i, 1); saveCfg(); refreshAll(); } });
+        fields.push({ type: "select", label: t("sport.addLeague"), value: "",
+          options: [{ v: "", t: t("sport.pick") }].concat(available.map((l) => ({ v: l.code, t: l.name }))),
+          onChange: (code) => { if (!code) return; cfg.follows.football.push({ type: "league", comp: code }); saveCfg(); refreshAll(); openSettings(); } });
+      }
+      Settings.open(t("card.sport"), fields);
     }
-    const gear = host.closest(".card") && host.closest(".card").querySelector(".head-right .gear");
-    if (gear) { gear.setAttribute("aria-label", "Réglages F1"); gear.addEventListener("click", openSettings); }
+    if (gear) gear.addEventListener("click", openSettings);
 
-    fetch("https://api.jolpi.ca/ergast/f1/current.json")
-      .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-      .then((j) => {
-        races = (j.MRData && j.MRData.RaceTable && j.MRData.RaceTable.Races) || [];
-        if (!races.length) throw new Error("no races");
-        total = races.length;
+    whenNT(async function (NT) {
+      try {
+        cfg.sports = (await NT.storage.getConfig("sports", [])) || [];
+        cfg.follows = (await NT.storage.getConfig("follows", { football: [] })) || { football: [] };
+        if (!cfg.follows.football) cfg.follows.football = [];
+        await loadBoards();
         render();
-        if (timer) clearInterval(timer); timer = setInterval(render, 60000);
-      })
-      .catch((e) => { console.warn("[f1]", e); host.innerHTML = '<div class="empty">' + t("empty.f1") + '</div>'; });
-  });
+        NT.storage.onCacheChanged((key) => { if (key.indexOf("sport:scoreboard:") === 0) refreshAll(); });
+        setInterval(refreshAll, 60000);
+      } catch (e) { console.warn("[sport]", e); render(); }
+    });
+  })();
 
   /* ============================================================
      ONBOARDING — assistant de premier lancement (universel).
