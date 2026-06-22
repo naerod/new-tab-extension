@@ -279,7 +279,7 @@ const server = http.createServer(async (req, res) => {
       // endpoint ouvert (données publiques) ; la clé reste côté serveur.
       const rest = url.slice('/api/football/'.length);
       // whitelist stricte (pas d'open proxy) : competitions/<id>/(standings|matches) | teams/<id>/matches
-      if (!/^(competitions\/[A-Za-z0-9_-]+\/(standings|matches)|teams\/[0-9]+\/matches)$/.test(rest)) {
+      if (!/^(competitions\/[A-Za-z0-9_-]+\/(standings|matches|teams)|teams\/[0-9]+\/matches)$/.test(rest)) {
         res.writeHead(400); return res.end('{"error":"bad path"}');
       }
       const q = (req.url.split('?')[1] || '');

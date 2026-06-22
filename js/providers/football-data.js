@@ -44,6 +44,11 @@ export function normalizeStandings(json, { competition } = {}) {
   return { competition: comp, rows, source: SOURCE };
 }
 
+/** @returns {import("./types.js").Team[]} */
+export function normalizeTeams(json) {
+  return (json?.teams || []).map(normalizeTeam);
+}
+
 /** @returns {import("./types.js").Match[]} */
 export function normalizeMatches(json, { competition } = {}) {
   return (json?.matches || []).map((m) => {
@@ -90,6 +95,10 @@ export function createFootballDataAdapter({ httpGet, base = "/api/football" } = 
     async getTeamMatches(teamId, { status = "FINISHED", limit = 5 } = {}) {
       const json = await httpGet(`${base}/teams/${teamId}/matches?status=${status}&limit=${limit}`);
       return normalizeMatches(json);
+    },
+    async getTeams(competitionId) {
+      const json = await httpGet(`${base}/competitions/${competitionId}/teams`);
+      return normalizeTeams(json);
     },
   };
 }

@@ -105,7 +105,11 @@
       "sport.noMatch": "Aucun match à venir.", "sport.more": "Tous les matchs",
       "sport.today": "Aujourd'hui", "sport.upcoming": "À venir", "sport.recent": "Résultats récents",
       "sport.standings.soon": "Classements bientôt (via football-data).",
-      "sport.pick": "Choisir une ligue…",
+      "sport.pick": "Choisir…",
+      "sport.follows": "Suivis", "sport.addTeamLeague": "Suivre une équipe — ligue",
+      "sport.addTeam": "Équipe à suivre", "sport.rotate": "Rotation auto (s)",
+      "sport.rotate.sub": "0 = désactivée", "sport.mode": "Ordre des pages",
+      "sport.mode.auto": "Auto (For You)", "sport.mode.manual": "Manuel",
     },
     en: {
       "title": "New tab",
@@ -177,7 +181,11 @@
       "sport.noMatch": "No upcoming match.", "sport.more": "All matches",
       "sport.today": "Today", "sport.upcoming": "Upcoming", "sport.recent": "Recent results",
       "sport.standings.soon": "Standings coming soon (via football-data).",
-      "sport.pick": "Pick a league…",
+      "sport.pick": "Pick…",
+      "sport.follows": "Follows", "sport.addTeamLeague": "Follow a team — league",
+      "sport.addTeam": "Team to follow", "sport.rotate": "Auto-rotate (s)",
+      "sport.rotate.sub": "0 = off", "sport.mode": "Page order",
+      "sport.mode.auto": "Auto (For You)", "sport.mode.manual": "Manual",
     },
   };
 
@@ -690,6 +698,9 @@
     return {
       set(arr) { items = arr || []; build(); },
       message(html) { items = []; track.style.width = "100%"; track.innerHTML = '<div class="pg-page" style="width:100%">' + html + "</div>"; nav.style.display = "none"; },
+      next() { const n = npages(); if (n <= 1) return; page = (page + 1) % n; update(); },   // wraps (auto-rotation)
+      count() { return npages(); },
+      page() { return page; },
     };
   }
 
@@ -2513,9 +2524,10 @@
   } catch (e) { console.warn("[detail]", e); }
 
   /* ============================================================
-     SPORT — widget paginé multi-ligues (football d'abord, ESPN keyless via le
-     service worker / bridge). Vue plein écran via le Router. Bascule auto/manuel,
-     suivi multi-ligues. F1 / basket / tennis : phases suivantes (ROADMAP).
+     SPORT — widget multi-suivis paginé (football : ligues ET équipes).
+     Compact : match d'une ligue, ou snippet de classement §4.2 (équipe + voisins
+     + top/bottom). Vue plein écran dédiée (Router). Rotation auto + ordre
+     auto(For You)/manuel. F1/basket/tennis : fournisseurs de pages additionnels.
      ============================================================ */
   (function sport() {
     const host = $("#sport"); if (!host) return;
@@ -2525,40 +2537,54 @@
     if (gear) gear.setAttribute("aria-label", t("card.sport"));
 
     const tfmt = new Intl.DateTimeFormat(LOCALE(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-    let cfg = { sports: [], follows: { football: [] } };
-    let boards = {};   // league code -> Match[]
-    let pager = null;
+
+    let cfg = { sports: [], follows: { football: [] }, sport: { rotate: 60, mode: "auto" } };
+    let boards = {};      // league code -> Match[] (ESPN scoreboard)
+    let standings = {};   // comp -> Standing (football-data)
+    let teamMx = {};      // teamId -> Match[] (football-data, finished + scheduled)
+    let teamsByComp = {}; // comp -> Team[] (settings autocomplete)
+    let pager = null, rotTimer = null, pendingTeamLeague = null;
 
     const footballOn = () => cfg.sports.indexOf("football") !== -1;
-    const followed = () => (cfg.follows && cfg.follows.football) || [];
+    const follows = () => (cfg.follows && cfg.follows.football) || [];
+    const leagueFollows = () => follows().filter((f) => f.type !== "team");
+    const teamFollows = () => follows().filter((f) => f.type === "team");
     const nameOf = (code) => (window.NT && window.NT.leagueName) ? window.NT.leagueName(code) : code;
-    const teamLabel = (side) => escHtml(side.team.shortName || side.team.name || "?");
+    const teamLabel = (s) => escHtml(s.team.shortName || s.team.name || "?");
     const scoreOf = (m) => (m.home.score != null && m.away.score != null) ? (m.home.score + " – " + m.away.score) : "";
+    const fl = (c) => (window.NT && window.NT.formLabel) ? window.NT.formLabel(c, LANG) : c;
+    const ts = (d) => new Date(d).getTime();
+    function whenNT(cb) { if (window.NT) cb(window.NT); else window.addEventListener("nt:ready", () => cb(window.NT), { once: true }); }
 
-    function whenNT(cb) {
-      if (window.NT) cb(window.NT);
-      else window.addEventListener("nt:ready", () => cb(window.NT), { once: true });
+    async function loadData() {
+      if (!window.NT) return;
+      const NT = window.NT;
+      const leagueComps = leagueFollows().map((f) => f.comp);
+      const teamComps = teamFollows().map((f) => f.comp);
+      await Promise.all([].concat(
+        leagueComps.map(async (c) => { boards[c] = await NT.footballScoreboard(c); }),
+        Array.from(new Set(leagueComps.concat(teamComps))).map(async (c) => { standings[c] = await NT.footballStandings(c); }),
+        teamFollows().map(async (f) => {
+          const fin = await NT.footballTeamMatches(f.id, { status: "FINISHED", limit: 6 });
+          const sc = await NT.footballTeamMatches(f.id, { status: "SCHEDULED", limit: 6 });
+          teamMx[f.id] = (fin || []).concat(sc || []);
+        })
+      ));
     }
 
-    // most relevant match for a league: live > next upcoming > last finished
     function pickMatch(matches) {
       const now = Date.now();
-      const live = matches.find((m) => m.status === "live");
+      const live = (matches || []).find((m) => m.status === "live");
       if (live) return { m: live, kind: "live" };
-      const up = matches.filter((m) => m.status === "scheduled" && new Date(m.utcDate).getTime() > now - 2 * 3600e3)
-        .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+      const up = (matches || []).filter((m) => m.status === "scheduled" && ts(m.utcDate) > now - 2 * 3600e3).sort((a, b) => ts(a.utcDate) - ts(b.utcDate));
       if (up[0]) return { m: up[0], kind: "next" };
-      const fin = matches.filter((m) => m.status === "finished")
-        .sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate));
+      const fin = (matches || []).filter((m) => m.status === "finished").sort((a, b) => ts(b.utcDate) - ts(a.utcDate));
       if (fin[0]) return { m: fin[0], kind: "last" };
       return null;
     }
-
     function matchRow(m, kind) {
       const score = scoreOf(m);
-      const mid = (kind === "finished" || kind === "last") ? (score || "–")
-        : kind === "live" ? (score || "–")
-        : "vs";
+      const mid = (kind === "finished" || kind === "last" || kind === "live") ? (score || "–") : "vs";
       const right = kind === "live" ? '<span class="sp-live">' + t("sport.live") + (m.minute ? " " + m.minute + "'" : "") + '</span>'
         : (kind === "finished" || kind === "last") ? ''
         : '<span class="sp-time">' + escHtml(tfmt.format(new Date(m.utcDate))) + '</span>';
@@ -2568,129 +2594,183 @@
         + '<span class="sp-team">' + teamLabel(m.away) + '</span></div>'
         + (right ? '<div class="sp-meta">' + right + '</div>' : '') + '</div>';
     }
+    function formCell(form) {
+      return '<span class="sv-form">' + (form || []).slice(-5).map((c) => '<i class="frm frm-' + c + '">' + fl(c) + '</i>').join("") + '</span>';
+    }
+    function standRowFull(r, hl) {
+      return '<tr' + (hl ? ' class="sv-hl"' : '') + '><td>' + r.position + '</td>'
+        + '<td class="l sv-club">' + (r.team.crest ? '<img src="' + escHtml(r.team.crest) + '" alt="" loading="lazy">' : '') + escHtml(r.team.shortName || r.team.name) + '</td>'
+        + '<td>' + r.played + '</td><td>' + r.won + '</td><td>' + r.draw + '</td><td>' + r.lost + '</td>'
+        + '<td>' + (r.goalDifference > 0 ? "+" : "") + r.goalDifference + '</td>'
+        + '<td class="sv-pts">' + r.points + '</td><td class="l">' + formCell(r.form) + '</td></tr>';
+    }
+    function standingsTable(std, hlId) {
+      if (!std || !std.rows || !std.rows.length) return '<div class="sv-soon">' + t("sport.standings.soon") + '</div>';
+      const head = '<tr><th>#</th><th class="l">Club</th><th>MJ</th><th>G</th><th>N</th><th>P</th><th>DB</th><th>Pts</th><th class="l">' + (LANG === "fr" ? "Forme" : "Form") + '</th></tr>';
+      const rows = std.rows.map((r) => standRowFull(r, hlId && String(r.team.id) === String(hlId))).join("");
+      return '<div class="sv-table-wrap"><table class="sv-table tnum"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>';
+    }
+    // §4.2 compact : équipe suivie + voisins + top2 + bottom2
+    function compactStanding(std, teamId) {
+      if (!std || !std.rows || !std.rows.length) return null;
+      const rows = std.rows;
+      const idx = rows.findIndex((r) => String(r.team.id) === String(teamId));
+      if (idx === -1) return null;
+      const wanted = new Set();
+      [0, 1, idx - 1, idx, idx + 1, rows.length - 2, rows.length - 1].forEach((i) => { if (i >= 0 && i < rows.length) wanted.add(i); });
+      const sorted = Array.from(wanted).sort((a, b) => a - b);
+      let prev = -1; const trs = [];
+      sorted.forEach((i) => {
+        if (prev !== -1 && i > prev + 1) trs.push('<tr class="sv-gap"><td colspan="5">⋯</td></tr>');
+        const r = rows[i];
+        trs.push('<tr' + (i === idx ? ' class="sv-hl"' : '') + '><td>' + r.position + '</td>'
+          + '<td class="l sv-club">' + (r.team.crest ? '<img src="' + escHtml(r.team.crest) + '" alt="">' : '') + escHtml(r.team.shortName || r.team.name) + '</td>'
+          + '<td>' + r.played + '</td><td>' + (r.goalDifference > 0 ? "+" : "") + r.goalDifference + '</td><td class="sv-pts">' + r.points + '</td></tr>');
+        prev = i;
+      });
+      return '<table class="sp-mini tnum"><thead><tr><th>#</th><th class="l">Club</th><th>MJ</th><th>DB</th><th>Pts</th></tr></thead><tbody>' + trs.join("") + '</tbody></table>';
+    }
 
-    function pageHtml(code) {
-      const pick = pickMatch(boards[code] || []);
-      const body = pick ? matchRow(pick.m, pick.kind) : '<div class="empty">' + t("sport.noMatch") + '</div>';
-      return '<div class="sp-page"><div class="sp-league">' + escHtml(nameOf(code)) + '</div>' + body + '</div>';
+    function relevance(f) {
+      const now = Date.now();
+      const matches = f.type === "team" ? (teamMx[f.id] || []) : (boards[f.comp] || []);
+      if (matches.some((m) => m.status === "live")) return 1000;
+      const up = matches.filter((m) => m.status === "scheduled").map((m) => ts(m.utcDate)).filter((x) => x > now).sort((a, b) => a - b)[0];
+      if (up) return 800 - Math.min((up - now) / 3600e3, 720);
+      const last = matches.filter((m) => m.status === "finished").map((m) => ts(m.utcDate)).sort((a, b) => b - a)[0];
+      if (last) return 400 - Math.min((now - last) / 3600e3, 360);
+      return 100;
+    }
+    function orderedFollows() {
+      const list = follows().slice();
+      if (cfg.sport.mode === "manual") return list;
+      return list.sort((a, b) => relevance(b) - relevance(a));
+    }
+    function keyOf(f) { return f.type === "team" ? ("T" + f.id) : ("L" + f.comp); }
+    function followByKey(k) { return follows().find((f) => keyOf(f) === k); }
+
+    function compactPage(k) {
+      const f = followByKey(k); if (!f) return "";
+      if (f.type === "team") {
+        const snip = compactStanding(standings[f.comp], f.id);
+        const pm = pickMatch(teamMx[f.id]);
+        return '<div class="sp-page"><div class="sp-league">' + escHtml(f.name || "") + ' · ' + escHtml(nameOf(f.comp)) + '</div>'
+          + (pm ? matchRow(pm.m, pm.kind) : '')
+          + (snip || ('<div class="sv-soon">' + t("sport.standings.soon") + '</div>')) + '</div>';
+      }
+      const pick = pickMatch(boards[f.comp]);
+      return '<div class="sp-page"><div class="sp-league">' + escHtml(nameOf(f.comp)) + '</div>'
+        + (pick ? matchRow(pick.m, pick.kind) : '<div class="empty">' + t("sport.noMatch") + '</div>') + '</div>';
     }
 
     function ensurePager() {
       if (pager) return;
-      pager = makePager(card, host, { pageSize: 1, renderSlice: (slice) => slice.length ? pageHtml(slice[0]) : "" });
-      host.addEventListener("click", (e) => {
-        if (e.target.closest(".pg-arrow")) return;
-        if (footballOn() && followed().length) openView();
-      });
+      pager = makePager(card, host, { pageSize: 1, renderSlice: (slice) => slice.length ? compactPage(slice[0]) : "" });
+      host.addEventListener("click", (e) => { if (e.target.closest(".pg-arrow")) return; if (footballOn() && follows().length) openView(); });
     }
-
+    function startRotation() {
+      if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
+      const sec = cfg.sport.rotate;
+      if (sec && sec > 0 && pager) rotTimer = setInterval(() => { if (!document.body.classList.contains("in-view")) pager.next(); }, sec * 1000);
+    }
     function render() {
       ensurePager();
-      if (!footballOn() || !followed().length) {
+      if (!footballOn() || !follows().length) {
         if (meta) meta.textContent = "";
         pager.message('<div class="empty">' + t("empty.sport") + '</div>');
+        if (rotTimer) { clearInterval(rotTimer); rotTimer = null; }
         return;
       }
-      const codes = followed().map((f) => f.comp);
-      if (meta) meta.textContent = codes.length + (LANG === "fr" ? (codes.length > 1 ? " ligues" : " ligue") : (codes.length > 1 ? " leagues" : " league"));
-      pager.set(codes);
+      const keys = orderedFollows().map(keyOf);
+      if (meta) meta.textContent = keys.length + (LANG === "fr" ? (keys.length > 1 ? " suivis" : " suivi") : (keys.length > 1 ? " follows" : " follow"));
+      pager.set(keys);
+      startRotation();
     }
 
-    function formCell(form) {
-      const fl = (window.NT && window.NT.formLabel) || ((c) => c);
-      return '<span class="sv-form">' + (form || []).slice(-5).map((c) => '<i class="frm frm-' + c + '">' + fl(c, LANG) + '</i>').join("") + '</span>';
+    function teamSection(f) {
+      const ms = (teamMx[f.id] || []).slice().sort((a, b) => ts(a.utcDate) - ts(b.utcDate));
+      const now = Date.now();
+      const live = ms.filter((m) => m.status === "live");
+      const up = ms.filter((m) => m.status === "scheduled" && ts(m.utcDate) > now).slice(0, 5);
+      const fin = ms.filter((m) => m.status === "finished").reverse().slice(0, 5);
+      const grp = (label, arr, kind) => arr.length ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
+      return '<div class="sv-league"><h3>' + escHtml(f.name || "") + ' <span class="sv-sub">' + escHtml(nameOf(f.comp)) + '</span></h3>'
+        + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last")
+        + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Classement" : "Standings") + '</div>' + standingsTable(standings[f.comp], f.id) + '</div></div>';
     }
-    function standingsTable(std) {
-      if (!std || !std.rows || !std.rows.length) return '<div class="sv-soon">' + t("sport.standings.soon") + '</div>';
-      const head = '<tr><th>#</th><th class="l">' + (LANG === "fr" ? "Club" : "Club") + '</th><th>MJ</th><th>G</th><th>N</th><th>P</th><th>DB</th><th>Pts</th><th class="l">' + (LANG === "fr" ? "Forme" : "Form") + '</th></tr>';
-      const rows = std.rows.map((r) => '<tr>'
-        + '<td>' + r.position + '</td>'
-        + '<td class="l sv-club">' + (r.team.crest ? '<img src="' + escHtml(r.team.crest) + '" alt="" loading="lazy">' : '') + escHtml(r.team.shortName || r.team.name) + '</td>'
-        + '<td>' + r.played + '</td><td>' + r.won + '</td><td>' + r.draw + '</td><td>' + r.lost + '</td>'
-        + '<td>' + (r.goalDifference > 0 ? "+" : "") + r.goalDifference + '</td>'
-        + '<td class="sv-pts">' + r.points + '</td>'
-        + '<td class="l">' + formCell(r.form) + '</td>'
-        + '</tr>').join("");
-      return '<div class="sv-table-wrap"><table class="sv-table tnum"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>';
+    function leagueSection(f) {
+      const matches = (boards[f.comp] || []).slice().sort((a, b) => ts(a.utcDate) - ts(b.utcDate));
+      const now = Date.now();
+      const live = matches.filter((m) => m.status === "live");
+      const up = matches.filter((m) => m.status === "scheduled" && ts(m.utcDate) > now);
+      const fin = matches.filter((m) => m.status === "finished").reverse();
+      const grp = (label, arr, kind) => arr.length ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
+      return '<div class="sv-league"><h3>' + escHtml(nameOf(f.comp)) + '</h3>'
+        + grp(t("sport.live"), live, "live") + grp(t("sport.upcoming"), up, "next") + grp(t("sport.recent"), fin, "last")
+        + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Classement" : "Standings") + '</div>' + standingsTable(standings[f.comp]) + '</div></div>';
     }
-
     function openView() {
-      const codes = followed().map((f) => f.comp);
-      const sections = codes.map((code) => {
-        const matches = (boards[code] || []).slice().sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
-        const now = Date.now();
-        const live = matches.filter((m) => m.status === "live");
-        const up = matches.filter((m) => m.status === "scheduled" && new Date(m.utcDate).getTime() > now);
-        const fin = matches.filter((m) => m.status === "finished").reverse();
-        const group = (label, arr, kind) => arr.length
-          ? '<div class="sv-group"><div class="sv-grouptitle">' + label + '</div>' + arr.map((m) => matchRow(m, kind)).join("") + '</div>' : '';
-        return '<div class="sv-league"><h3>' + escHtml(nameOf(code)) + '</h3>'
-          + group(t("sport.live"), live, "live")
-          + group(t("sport.upcoming"), up, "next")
-          + group(t("sport.recent"), fin, "last")
-          + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Classement" : "Standings") + '</div>'
-          + '<div class="sv-standings" data-comp="' + code + '"><div class="sv-soon">…</div></div></div>'
-          + '</div>';
-      }).join("");
-      Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'), (viewBody) => {
-        // fetch standings lazily and fill each league's placeholder
-        if (!window.NT || !window.NT.footballStandings) return;
-        codes.forEach(async (code) => {
-          const slot = viewBody.querySelector('.sv-standings[data-comp="' + code + '"]');
-          if (!slot) return;
-          try { slot.innerHTML = standingsTable(await window.NT.footballStandings(code)); }
-          catch (e) { slot.innerHTML = '<div class="sv-soon">' + t("sport.standings.soon") + '</div>'; }
-        });
-      });
+      const sections = orderedFollows().map((f) => f.type === "team" ? teamSection(f) : leagueSection(f)).join("");
+      Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'));
     }
 
     function saveCfg() {
       if (!window.NT) return;
       window.NT.storage.setConfig("sports", cfg.sports);
       window.NT.storage.setConfig("follows", cfg.follows);
+      window.NT.storage.setConfig("sportCfg", cfg.sport);
       window.NT.refresh();
     }
-    async function refreshAll() { await loadBoards(); render(); }
-    async function loadBoards() {
-      if (!window.NT) return;
-      const codes = followed().map((f) => f.comp);
-      await Promise.all(codes.map(async (c) => { try { boards[c] = await window.NT.footballScoreboard(c); } catch (e) { boards[c] = boards[c] || []; } }));
-    }
+    async function refreshAll() { await loadData(); render(); }
 
     function openSettings() {
       if (!window.NT) return;
       const leagues = window.NT.FOOTBALL_LEAGUES || [];
-      const current = followed();
-      const available = leagues.filter((l) => !current.some((f) => f.comp === l.code));
+      const cur = follows();
+      const availLeagues = leagues.filter((l) => !cur.some((f) => f.type !== "team" && f.comp === l.code));
       const fields = [
         { type: "toggle", label: t("sport.football"), value: footballOn(),
-          onChange: (v) => {
-            cfg.sports = v ? Array.from(new Set(cfg.sports.concat("football"))) : cfg.sports.filter((s) => s !== "football");
-            saveCfg(); render(); openSettings();
-          } },
+          onChange: (v) => { cfg.sports = v ? Array.from(new Set(cfg.sports.concat("football"))) : cfg.sports.filter((s) => s !== "football"); saveCfg(); render(); openSettings(); } },
       ];
       if (footballOn()) {
-        fields.push({ type: "list", label: t("sport.leagues"),
-          items: current.map((f) => ({ label: nameOf(f.comp) })),
+        fields.push({ type: "list", label: t("sport.follows"),
+          items: cur.map((f) => ({ label: f.type === "team" ? (f.name || f.id) : nameOf(f.comp), sub: f.type === "team" ? nameOf(f.comp) : (LANG === "fr" ? "Ligue" : "League") })),
           move: (from, to) => { const x = cfg.follows.football.splice(from, 1)[0]; cfg.follows.football.splice(to, 0, x); saveCfg(); render(); },
           onRemove: (it, i) => { cfg.follows.football.splice(i, 1); saveCfg(); refreshAll(); } });
         fields.push({ type: "select", label: t("sport.addLeague"), value: "",
-          options: [{ v: "", t: t("sport.pick") }].concat(available.map((l) => ({ v: l.code, t: l.name }))),
+          options: [{ v: "", t: t("sport.pick") }].concat(availLeagues.map((l) => ({ v: l.code, t: l.name }))),
           onChange: (code) => { if (!code) return; cfg.follows.football.push({ type: "league", comp: code }); saveCfg(); refreshAll(); openSettings(); } });
+        fields.push({ type: "select", label: t("sport.addTeamLeague"), value: pendingTeamLeague || "",
+          options: [{ v: "", t: t("sport.pick") }].concat(leagues.map((l) => ({ v: l.code, t: l.name }))),
+          onChange: async (code) => { pendingTeamLeague = code || null; if (code && !teamsByComp[code]) teamsByComp[code] = await window.NT.footballTeams(code); openSettings(); } });
+        if (pendingTeamLeague && teamsByComp[pendingTeamLeague]) {
+          const taken = teamFollows().map((f) => String(f.id));
+          const opts = teamsByComp[pendingTeamLeague].filter((tm) => taken.indexOf(String(tm.id)) === -1);
+          fields.push({ type: "select", label: t("sport.addTeam"), value: "",
+            options: [{ v: "", t: t("sport.pick") }].concat(opts.map((tm) => ({ v: String(tm.id), t: tm.shortName || tm.name }))),
+            onChange: (id) => { if (!id) return; const tm = teamsByComp[pendingTeamLeague].find((x) => String(x.id) === id); cfg.follows.football.push({ type: "team", id: String(id), name: tm ? (tm.shortName || tm.name) : id, comp: pendingTeamLeague, crest: tm ? tm.crest : "" }); pendingTeamLeague = null; saveCfg(); refreshAll(); openSettings(); } });
+        }
+        fields.push({ type: "stepper", label: t("sport.rotate"), sub: t("sport.rotate.sub"), value: cfg.sport.rotate, min: 0, max: 120,
+          onChange: (v) => { cfg.sport.rotate = v; saveCfg(); startRotation(); } });
+        fields.push({ type: "segmented", label: t("sport.mode"), value: cfg.sport.mode,
+          options: [{ v: "auto", t: t("sport.mode.auto") }, { v: "manual", t: t("sport.mode.manual") }],
+          onChange: (v) => { cfg.sport.mode = v; saveCfg(); render(); } });
       }
       Settings.open(t("card.sport"), fields);
     }
     if (gear) gear.addEventListener("click", openSettings);
 
+    let lastLoad = 0;
     whenNT(async function (NT) {
       try {
         cfg.sports = (await NT.storage.getConfig("sports", [])) || [];
         cfg.follows = (await NT.storage.getConfig("follows", { football: [] })) || { football: [] };
         if (!cfg.follows.football) cfg.follows.football = [];
-        await loadBoards();
+        cfg.sport = Object.assign({ rotate: 60, mode: "auto" }, (await NT.storage.getConfig("sportCfg", {})) || {});
+        await loadData(); lastLoad = Date.now();
         render();
-        NT.storage.onCacheChanged((key) => { if (key.indexOf("sport:scoreboard:") === 0) refreshAll(); });
-        setInterval(refreshAll, 60000);
+        NT.storage.onCacheChanged((key) => { if (key.indexOf("sport:") === 0 && Date.now() - lastLoad > 3000) { lastLoad = Date.now(); refreshAll(); } });
+        setInterval(() => { lastLoad = Date.now(); refreshAll(); }, 90000);
       } catch (e) { console.warn("[sport]", e); render(); }
     });
   })();

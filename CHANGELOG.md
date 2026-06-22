@@ -3,6 +3,13 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.5.0] — 2026-06-22 — Suivi d'équipe (§4.2) + rotation + For You
+- **Suivre une équipe précise** (en plus des ligues) via réglages ⚙ : choisir une ligue → choisir l'équipe (autocomplétion via football-data, proxy `/competitions/{id}/teams`).
+- **Compact §4.2** : pour une équipe suivie, mini-classement (équipe surlignée + voisins + top2/bottom2 : Rang, Club, MJ, DB, Pts) + match pertinent.
+- **Vue plein écran par entité** : équipe → derniers résultats / prochains matchs / classement complet (équipe surlignée + forme V/N/D).
+- **Rotation auto** des pages (défaut 60 s, configurable, 0 = off) + **ordre auto (For You)** (live > match imminent > résultat récent) **ou manuel** (réordonnable).
+- Suivis réordonnables/supprimables ; bridge `footballTeams`/`footballTeamMatches` (cache).
+
 ## [0.4.1] — 2026-06-22 — Corrections pop-up widgets
 - **Widget entièrement cliquable** : la liste d'exclusion est réduite aux vrais contrôles (`a, button, input, select, textarea`) — fini les « quelques pixels cliquables » / double-clic.
 - **Plus de réalignement de l'arrière-plan** : le placeholder reprend la classe de colonne (`col*`) et la hauteur du widget → il réserve exactement sa cellule de grille, invisible ; les autres widgets restent statiques.

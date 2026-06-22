@@ -1268,3 +1268,16 @@ html[data-theme="light"] .sv-league{ background:var(--card); border-color:rgba(2
 .detail-host .card.expanded .card-head{ margin-bottom:18px; }
 .detail-host .card.expanded .card-title{ font-size:20px; }
 .card-placeholder{ visibility:hidden; }   /* réserve la cellule de grille, sans boîte visible */
+
+/* Sport compact — mini standings snippet (§4.2) + highlighted rows */
+.sp-mini{ width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+.sp-mini th{ font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-4); font-weight:600; padding:3px 5px; text-align:center; }
+.sp-mini td{ padding:4px 5px; text-align:center; color:var(--ink-2); border-top:1px solid var(--line); }
+.sp-mini th.l, .sp-mini td.l{ text-align:left; }
+.sp-mini .sv-club{ gap:6px; }
+.sp-mini .sv-club img{ width:14px; height:14px; }
+.sp-mini .sv-pts{ color:var(--ink); font-weight:700; }
+.sv-hl{ background:var(--accent-soft); }
+.sv-hl td{ color:var(--ink); font-weight:600; }
+.sv-gap td{ color:var(--ink-4); text-align:center; padding:2px; font-size:10px; }
+.sv-sub{ font-size:12px; font-weight:400; color:var(--ink-3); }

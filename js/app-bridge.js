@@ -35,6 +35,32 @@ async function footballStandings(code) {
   }
 }
 
+async function footballTeams(code) {
+  const key = "sport:teams:" + code;
+  const cached = await storage.getCacheStale(key);
+  if (cached && !cached.stale) return cached.value;
+  try {
+    const teams = await footballData.getTeams(code);
+    await storage.setCache(key, teams, 24 * 3600_000); // teams rarely change
+    return teams;
+  } catch (e) {
+    return cached ? cached.value : [];
+  }
+}
+
+async function footballTeamMatches(teamId, opts) {
+  const key = "sport:team:" + teamId + ":" + ((opts && opts.status) || "ALL");
+  const cached = await storage.getCacheStale(key);
+  if (cached && !cached.stale) return cached.value;
+  try {
+    const matches = await footballData.getTeamMatches(teamId, opts);
+    await storage.setCache(key, matches, 5 * 60_000);
+    return matches;
+  } catch (e) {
+    return cached ? cached.value : [];
+  }
+}
+
 async function footballScoreboard(code) {
   const key = "sport:scoreboard:" + code;
   const cached = await storage.getCacheStale(key);
@@ -57,6 +83,8 @@ window.NT = {
   leagueName,
   footballScoreboard,
   footballStandings,
+  footballTeams,
+  footballTeamMatches,
   refresh() { try { chrome.runtime.sendMessage({ type: "refresh" }); } catch (e) { /* SW asleep */ } },
 };
 window.dispatchEvent(new CustomEvent("nt:ready"));

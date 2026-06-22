@@ -56,8 +56,10 @@ await page.evaluate(async ({ theme, seed }) => {
     try {
       await chrome.storage.sync.set({
         config: { sports: ["football"], follows: { football: [
-          { type: "league", comp: "FL1" }, { type: "league", comp: "PL" }, { type: "league", comp: "CL" },
-        ] } },
+          { type: "team", id: "524", name: "PSG", comp: "FL1" },
+          { type: "team", id: "57", name: "Arsenal", comp: "PL" },
+          { type: "league", comp: "FL1" }, { type: "league", comp: "CL" },
+        ] }, sportCfg: { rotate: 0, mode: "manual" } },
       });
     } catch (e) {}
   }
