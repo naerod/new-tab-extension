@@ -2524,8 +2524,27 @@
       pager.set(codes);
     }
 
+    function formCell(form) {
+      const fl = (window.NT && window.NT.formLabel) || ((c) => c);
+      return '<span class="sv-form">' + (form || []).slice(-5).map((c) => '<i class="frm frm-' + c + '">' + fl(c, LANG) + '</i>').join("") + '</span>';
+    }
+    function standingsTable(std) {
+      if (!std || !std.rows || !std.rows.length) return '<div class="sv-soon">' + t("sport.standings.soon") + '</div>';
+      const head = '<tr><th>#</th><th class="l">' + (LANG === "fr" ? "Club" : "Club") + '</th><th>MJ</th><th>G</th><th>N</th><th>P</th><th>DB</th><th>Pts</th><th class="l">' + (LANG === "fr" ? "Forme" : "Form") + '</th></tr>';
+      const rows = std.rows.map((r) => '<tr>'
+        + '<td>' + r.position + '</td>'
+        + '<td class="l sv-club">' + (r.team.crest ? '<img src="' + escHtml(r.team.crest) + '" alt="" loading="lazy">' : '') + escHtml(r.team.shortName || r.team.name) + '</td>'
+        + '<td>' + r.played + '</td><td>' + r.won + '</td><td>' + r.draw + '</td><td>' + r.lost + '</td>'
+        + '<td>' + (r.goalDifference > 0 ? "+" : "") + r.goalDifference + '</td>'
+        + '<td class="sv-pts">' + r.points + '</td>'
+        + '<td class="l">' + formCell(r.form) + '</td>'
+        + '</tr>').join("");
+      return '<div class="sv-table-wrap"><table class="sv-table tnum"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
     function openView() {
-      const sections = followed().map((f) => f.comp).map((code) => {
+      const codes = followed().map((f) => f.comp);
+      const sections = codes.map((code) => {
         const matches = (boards[code] || []).slice().sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
         const now = Date.now();
         const live = matches.filter((m) => m.status === "live");
@@ -2537,9 +2556,20 @@
           + group(t("sport.live"), live, "live")
           + group(t("sport.upcoming"), up, "next")
           + group(t("sport.recent"), fin, "last")
-          + '<div class="sv-soon">' + t("sport.standings.soon") + '</div></div>';
+          + '<div class="sv-group"><div class="sv-grouptitle">' + (LANG === "fr" ? "Classement" : "Standings") + '</div>'
+          + '<div class="sv-standings" data-comp="' + code + '"><div class="sv-soon">…</div></div></div>'
+          + '</div>';
       }).join("");
-      Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'));
+      Router.open(t("card.sport"), sections || ('<div class="empty">' + t("sport.noMatch") + '</div>'), (viewBody) => {
+        // fetch standings lazily and fill each league's placeholder
+        if (!window.NT || !window.NT.footballStandings) return;
+        codes.forEach(async (code) => {
+          const slot = viewBody.querySelector('.sv-standings[data-comp="' + code + '"]');
+          if (!slot) return;
+          try { slot.innerHTML = standingsTable(await window.NT.footballStandings(code)); }
+          catch (e) { slot.innerHTML = '<div class="sv-soon">' + t("sport.standings.soon") + '</div>'; }
+        });
+      });
     }
 
     function saveCfg() {

@@ -1229,3 +1229,20 @@ html[data-theme="light"] .sv-league{ background:var(--card); border-color:rgba(2
 .sv-grouptitle{ font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin:0 0 8px; }
 .sv-group .sp-match{ margin-bottom:6px; }
 .sv-soon{ font-size:11.5px; color:var(--ink-4); margin-top:6px; }
+
+/* Sport — standings table (full-screen view, §4.2/4.3) */
+.sv-table-wrap{ max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:var(--r-sm); }
+.sv-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.sv-table th{ position:sticky; top:0; background:var(--card-2); color:var(--ink-3); font-weight:600;
+  font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; padding:7px 6px; text-align:center; }
+.sv-table td{ padding:6px 6px; text-align:center; color:var(--ink-2); border-top:1px solid var(--line); }
+.sv-table th.l, .sv-table td.l{ text-align:left; }
+.sv-club{ display:flex; align-items:center; gap:7px; color:var(--ink); font-weight:500; white-space:nowrap; }
+.sv-club img{ width:16px; height:16px; object-fit:contain; flex:none; }
+.sv-pts{ color:var(--ink); font-weight:700; }
+.sv-form{ display:inline-flex; gap:3px; }
+.frm{ width:15px; height:15px; border-radius:4px; font-style:normal; font-size:9px; font-weight:700;
+  display:inline-flex; align-items:center; justify-content:center; color:#fff; }
+.frm-W{ background:var(--up); color:#04130d; }
+.frm-D{ background:var(--ink-4); color:var(--card); }
+.frm-L{ background:var(--down); color:#1a0606; }

@@ -3,6 +3,15 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.3.0] — 2026-06-22 — Classements football (football-data via proxy)
+### Ajouté
+- **Classements complets** dans la vue plein écran Sport : tableau par ligue (Rang, Club + logo, MJ, G, N, P, DB, Pts, **Forme** V/N/D colorée §4.2/4.3), scrollable.
+- **Backend** : endpoints proxy `naerod-api` (CT110) `/api/football/competitions/{id}/standings|matches`, `/api/football/teams/{id}/matches` — token football-data **server-side** (jamais embarqué), whitelist + cache 5 min. Token stocké dans Bitwarden + `.env` serveur.
+- `app-bridge` : `footballStandings(code)` (proxy → types internes, cache local 10 min).
+
+### Note sécurité
+- Le token football-data a fuité une fois dans la session (bug de parsing d'une commande) → **rotation recommandée** (cf. échange). Clé à faible sensibilité (gratuite, lecture seule, 10 req/min).
+
 ## [0.2.0] — 2026-06-22 — Widget Sport (football) + routing plein écran
 ### Ajouté
 - **A4 — Router mini-SPA** (`#viewLayer`) : clic sur un widget → vue plein écran (flèche retour, Échap pour fermer), barre de recherche épinglée. Accueil masqué pendant la vue.

@@ -10,13 +10,30 @@ import { buildRegistry } from "./providers/index.js";
 import { formLabel } from "./providers/types.js";
 import { COMP_TO_ESPN, FOOTBALL_LEAGUES, leagueName } from "./providers/leagues.js";
 
+const PROXY_BASE = "https://naerod.com";
 const httpGet = async (url) => {
   const r = await fetch(url);
   if (!r.ok) throw new Error("HTTP " + r.status);
   return r.json();
 };
-const registry = buildRegistry({ httpGet });
+// keyed sources (football-data) go through our proxy; absolute URL for the page
+const proxyGet = (path) => httpGet(path.startsWith("http") ? path : PROXY_BASE + path);
+const registry = buildRegistry({ httpGet, proxyGet });
 const espn = registry.get("espn").adapter;
+const footballData = registry.get("football-data").adapter;
+
+async function footballStandings(code) {
+  const key = "sport:standings:" + code;
+  const cached = await storage.getCacheStale(key);
+  if (cached && !cached.stale) return cached.value;
+  try {
+    const standing = await footballData.getStandings(code); // normalized Standing
+    await storage.setCache(key, standing, 10 * 60_000);
+    return standing;
+  } catch (e) {
+    return cached ? cached.value : null; // no token / off-season / rate-limited
+  }
+}
 
 async function footballScoreboard(code) {
   const key = "sport:scoreboard:" + code;
@@ -39,6 +56,7 @@ window.NT = {
   FOOTBALL_LEAGUES,
   leagueName,
   footballScoreboard,
+  footballStandings,
   refresh() { try { chrome.runtime.sendMessage({ type: "refresh" }); } catch (e) { /* SW asleep */ } },
 };
 window.dispatchEvent(new CustomEvent("nt:ready"));
