@@ -3,6 +3,12 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.1.1] — 2026-06-22 — Thème clair inversé
+- **Fond de page blanc pur `#ffffff`** (plus de fond crème/grisâtre).
+- **Widgets sur une surface unique gris clair** (`#f4f2ee`) légèrement accentuée sur le blanc, avec ombre douce — inversion du fonctionnement précédent.
+- **Uniformité** : Raccourcis / IA / Cet ordinateur (cartes `soft`) ont désormais **exactement la même couleur** que les autres widgets.
+- Tuiles internes (raccourcis, IA, dossiers) en **blanc** pour ressortir sur les widgets gris.
+
 ## [0.1.0] — 2026-06-22 — Socle Phase A + design de base
 Première version versionnée/testée. Baseline du chantier V1.
 

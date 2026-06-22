@@ -340,20 +340,20 @@
 
   /* ===== Thème clair — surfaces blanches sur fond crème, contraste AA ===== */
   html[data-theme="light"]{
-    --bg:#f3f1ec;          /* warm light grey page */
-    --bg-2:#e9e6df;        /* recessed (seg, inputs) */
-    --card:#ffffff;        /* crisp white cards that lift off the page */
-    --card-2:#ffffff;      /* flat (kills the muddy gradient) */
-    --hover:#f1efe9;
-    --line:rgba(28,26,22,.10);
-    --line-2:rgba(28,26,22,.16);
+    --bg:#ffffff;          /* pure white page */
+    --bg-2:#ebe9e3;        /* recessed (seg control) */
+    --card:#f4f2ee;        /* widgets: light warm grey, accented off white */
+    --card-2:#f4f2ee;      /* flat — same surface for every widget */
+    --hover:#ebe9e2;
+    --line:rgba(28,26,22,.08);
+    --line-2:rgba(28,26,22,.14);
 
     --ink:#1c1b18;         /* near-black, strong */
     --ink-2:#57534b;
     --ink-3:#857f74;
     --ink-4:#aaa49a;
 
-    --accent:#c2552f;      /* deeper coral for contrast on white */
+    --accent:#c2552f;      /* deeper coral for contrast on light */
     --accent-soft:rgba(194,85,47,.10);
     --accent-line:rgba(194,85,47,.40);
     --on-accent:#ffffff;
@@ -361,30 +361,24 @@
     --up:#1f9d6b;
     --down:#d65656;
   }
-  html[data-theme="light"] body{
-    background-image:radial-gradient(1100px 720px at 82% -12%, rgba(217,119,87,.07), transparent 60%);
-  }
-  /* Modern depth: white cards get a soft shadow instead of a flat border */
-  html[data-theme="light"] .card{
-    border-color:rgba(28,26,22,.06);
-    box-shadow:0 1px 2px rgba(28,26,22,.04), 0 4px 12px rgba(28,26,22,.05);
-  }
-  /* Soft tile panels (raccourcis / IA) need a real light surface, not the
-     dark-theme translucent overlay */
+  html[data-theme="light"] body{ background-image:none; }  /* keep the page pure #fff */
+
+  /* EVERY widget shares ONE surface (grey) + the same subtle depth.
+     .card.soft is included so Raccourcis / IA / Cet ordinateur match the rest. */
+  html[data-theme="light"] .card,
   html[data-theme="light"] .card.soft{
-    background:#faf9f6;
-    border-color:rgba(28,26,22,.07);
-    box-shadow:none;
+    background:var(--card);
+    border-color:rgba(28,26,22,.06);
+    box-shadow:0 1px 2px rgba(28,26,22,.03), 0 2px 8px rgba(28,26,22,.05);
   }
-  html[data-theme="light"] .seg,
-  html[data-theme="light"] .search input,
-  html[data-theme="light"] .modal-card input[type=text]{ color:var(--ink); }
-  /* IA tiles + folder tiles: real light surfaces (the dark-theme overlays vanish on white) */
+  /* Inner tiles pop as white against the grey widgets */
+  html[data-theme="light"] .sc .tile,
   html[data-theme="light"] .ai-mini a,
   html[data-theme="light"] .ai-tile,
   html[data-theme="light"] .ai-mini .ai-gear,
-  html[data-theme="light"] .sc.folder .tile{
-    background:#f1efe9; border-color:rgba(28,26,22,.10);
+  html[data-theme="light"] .sc.folder .tile,
+  html[data-theme="light"] .fb-item .tile{
+    background:#ffffff; border-color:rgba(28,26,22,.10);
   }
   html[data-theme="light"] .ai-mini a.bare{ background:transparent; border:0; }
   html[data-theme="light"] .seg button[data-engine="google"][aria-pressed="true"]{
@@ -393,6 +387,9 @@
   /* Soften the heavy dark hover shadows for the light theme */
   html[data-theme="light"] .ai-mini a:hover,
   html[data-theme="light"] .ai-tile:hover{ box-shadow:0 4px 12px rgba(28,26,22,.12); }
+  html[data-theme="light"] .seg,
+  html[data-theme="light"] .search input,
+  html[data-theme="light"] .modal-card input[type=text]{ color:var(--ink); }
 
   *{box-sizing:border-box;margin:0;padding:0}
 
