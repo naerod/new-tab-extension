@@ -7,9 +7,14 @@
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },
+  "background": {
+    "service_worker": "js/sw.js",
+    "type": "module"
+  },
   "permissions": [
     "history",
     "storage",
+    "alarms",
     "favicon",
     "identity",
     "geolocation",
@@ -30,6 +35,7 @@
     "https://query2.finance.yahoo.com/*",
     "https://www.googleapis.com/*",
     "https://api.jolpi.ca/*",
+    "https://site.api.espn.com/*",
     "https://naerod.com/*"
   ],
   "oauth2": {

@@ -17,5 +17,9 @@ Format inspiré de Keep a Changelog. Dates en heure locale Paris.
 - **A3 — couche providers** (`js/providers/`) : types internes (`types.js` : Team/Match/Standing/… + `toForm`/`formLabel`/`winnerFromScore`), `registry.js` (capacités + tier free/pro, `find`/`pick`), adapters `football-data.js` (via proxy, standings/fixtures/results, liveScores:false) et `espn.js` (scoreboard quasi-live keyless). Tests sur fixtures.
 - Outillage de test : `package.json` (`npm test` → `node --test`), `tests/` (zéro dépendance). **21/21 verts.**
 
+- **A2 — service worker** (`js/sw.js`, module) : `chrome.alarms` (polling 1 min), refresh cache-first des scoreboards des compétitions suivies, refresh à la demande par message. Manifest : `background.service_worker` + permission `alarms` + hôte `site.api.espn.com`. No-op tant qu'aucun sport n'est suivi.
+- **A9 — gating Pro** (`js/core/entitlements.js`) : tier `free`/`pro` (V1 = free, aucun paiement), `hasFeature`, `providersFor`/`pickProvider` filtrés par tier. Tests inclus.
+- `docs/SETUP.md` : chargement Chrome, tests, proxy & secrets (ADR-007), archi polling.
+
 ### À venir
-- A2 service worker + alarms, A4 routing mini-SPA, A5 thème clair (WCAG), A7 onboarding générique, A8 at-a-glance, A9 Pro gating ; Phase B (widget Sport — football d'abord).
+- A4 routing mini-SPA, A5 thème clair (passe WCAG), A7 onboarding générique, A8 at-a-glance ; Phase B (widget Sport — football d'abord).
