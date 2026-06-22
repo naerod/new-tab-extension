@@ -1,5 +1,11 @@
 # SETUP — développement & secrets
 
+## Dépôt vs dossier chargé dans Chrome
+- **Dépôt de travail (source de vérité, git)** : `~/workspace/new-tab-ext/` sur CT102.
+- **Dossier chargé par Dorian dans Chrome** : `S:\Dorian\PROJETS\new_tab\nouvel-onglet-extension` (= CT101 `/home/dorian/partage/...`). C'est une **copie déployée**, pas la source.
+- **Synchroniser dépôt → dossier S:** : `bash tools/deploy-share.sh` (tar over SSH, ne ship que les fichiers de l'extension). Puis recharger l'extension dans `chrome://extensions` (icône ↻).
+- ⚠️ Toujours déployer après modif, sinon Chrome charge l'ancienne version.
+
 ## Charger l'extension dans Chrome (test manuel)
 1. `chrome://extensions` → activer le **Mode développeur**.
 2. **Charger l'extension non empaquetée** → sélectionner le dossier `new-tab-ext/`.
