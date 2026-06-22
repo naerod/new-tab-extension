@@ -2437,9 +2437,77 @@
       if (afterRender) afterRender(layer.querySelector(".view-body"));
     }
     function close() { document.body.classList.remove("in-view"); if (layer) layer.innerHTML = ""; }
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && document.body.classList.contains("in-view")) close(); });
     return { open, close };
   })();
+
+  /* ============================================================
+     DETAIL — applique le principe « grande pop-up » à TOUS les widgets (sauf
+     l'agenda, déjà grand, et le sport qui a sa vue dédiée). Réutilise le VRAI
+     widget : on le déplace dans la pop-up (données live, réglages, pagination
+     intacts), on le remet en place à la fermeture. Clic dehors / Échap / ×.
+     ============================================================ */
+  const Detail = (function () {
+    let placeholder = null, moved = null;
+    function active() { return !!moved; }
+    function expand(card) {
+      const layer = $("#viewLayer");
+      if (!card || moved || !layer) return;
+      const closeLbl = LANG === "fr" ? "Fermer" : "Close";
+      const title = (card.querySelector(".card-title") || {}).textContent || "";
+      layer.innerHTML = '<div class="view-backdrop"></div>'
+        + '<div class="view-panel detail-panel" role="dialog" aria-modal="true" aria-label="' + escHtml(title) + '">'
+        + '<button type="button" class="view-close gear" aria-label="' + closeLbl + '">' + SVGI.close + '</button>'
+        + '<div class="detail-host"></div></div>';
+      placeholder = document.createElement("div");
+      placeholder.className = "card-placeholder";
+      placeholder.style.height = card.offsetHeight + "px";
+      card.parentNode.insertBefore(placeholder, card);
+      layer.querySelector(".detail-host").appendChild(card);
+      card.classList.add("expanded");
+      moved = card;
+      document.body.classList.add("in-view");
+      layer.querySelector(".view-backdrop").addEventListener("click", collapse);
+      layer.querySelector(".view-close").addEventListener("click", collapse);
+    }
+    function collapse() {
+      const layer = $("#viewLayer");
+      if (moved && placeholder) {
+        placeholder.parentNode.insertBefore(moved, placeholder);
+        moved.classList.remove("expanded");
+        placeholder.remove();
+      }
+      placeholder = null; moved = null;
+      document.body.classList.remove("in-view");
+      if (layer) layer.innerHTML = "";
+    }
+    const IGNORE = "a,button,input,select,textarea,label,.gear,.pg-arrow,.seg,.sc,.fb-item,.ai-mini a,.cfg-ac,.chip,.stk-addrow";
+    function attach(card) {
+      if (!card) return;
+      card.classList.add("expandable");
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(IGNORE)) return;     // laisse les éléments interactifs faire leur action
+        if (document.body.classList.contains("in-view")) return;
+        expand(card);
+      });
+    }
+    return { attach, collapse, active };
+  })();
+
+  // Échap ferme la surcouche active (pop-up sport OU widget agrandi)
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.body.classList.contains("in-view")) {
+      if (Detail.active()) Detail.collapse(); else Router.close();
+    }
+  });
+
+  // Rend chaque widget cliquable en grande pop-up — sauf l'agenda (déjà grand)
+  // et le sport (vue dédiée plus riche).
+  try {
+    $$(".bento > .card").forEach((card) => {
+      if (card.id === "agendaCard" || card.id === "sportCard") return;
+      Detail.attach(card);
+    });
+  } catch (e) { console.warn("[detail]", e); }
 
   /* ============================================================
      SPORT — widget paginé multi-ligues (football d'abord, ESPN keyless via le

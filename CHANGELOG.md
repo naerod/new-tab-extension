@@ -3,6 +3,11 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.4.0] — 2026-06-22 — Pop-up détaillée pour TOUS les widgets
+- **Clic sur n'importe quel widget → grande pop-up** (sauf l'**agenda**, déjà grand, et le **sport** qui garde sa vue dédiée plus riche).
+- Mécanisme générique `Detail` : on déplace le **vrai widget** dans la pop-up (données live, réglages ⚙, pagination conservés) puis on le remet en place à la fermeture.
+- Pop-up **adaptée au contenu** (hauteur auto, max 90vh puis scroll) — pas de grand vide pour les petits widgets. Fermeture : clic dehors / Échap / ×. Les clics sur éléments interactifs (liens, tuiles, réglages, flèches) gardent leur action normale.
+
 ## [0.3.1] — 2026-06-22 — Vue détaillée en grande pop-up
 - La vue détaillée d'un widget est maintenant une **grande pop-up** au-dessus de l'accueil assombri (au lieu d'un remplacement plein écran). **Fermeture facile** : clic sur le fond, **Échap**, ou bouton **×**. Décision Dorian, écart assumé au brief §3.4 (ADR-009).
 
