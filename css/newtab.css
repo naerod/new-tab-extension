@@ -926,13 +926,13 @@ img.fav-dark{ filter:brightness(0) invert(1); }
 /* ===================================================================
    PANNEAUX DE CONFIGURATION — pop-up générique par widget (roue crantée)
    =================================================================== */
-.cfg-card{ width:400px; }
+.cfg-card{ width:520px; }
 .cfg-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .cfg-head h3{ margin:0; }
 .cfg-x{ border:0; background:transparent; color:var(--ink-3); line-height:1; cursor:pointer; width:30px; height:30px; border-radius:7px; transition:.15s; display:inline-flex; align-items:center; justify-content:center; }
 .cfg-x svg{ width:18px; height:18px; }
 .cfg-x:hover{ color:var(--ink); background:var(--hover); }
-.cfg-body{ max-height:min(72vh,560px); overflow:auto; margin:0 -4px; padding:0 4px; }
+.cfg-body{ max-height:min(80vh,720px); overflow:auto; margin:0 -4px; padding:0 4px; }
 
 .cfg-field{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 0; border-top:1px solid var(--line); }
 .cfg-field:first-child{ border-top:0; }
@@ -996,7 +996,7 @@ img.fav-dark{ filter:brightness(0) invert(1); }
 
 /* groupe de cases sélectionnables (widgets, métriques…) — pilules sans checkbox :
    orange = sélectionné · gris = désélectionné/masqué */
-.cfg-checks{ display:flex; flex-wrap:wrap; gap:8px; }
+.cfg-checks{ display:flex; flex-wrap:wrap; row-gap:5px; column-gap:8px; }
 .cfg-check{ position:relative; display:inline-flex; align-items:center; cursor:pointer; user-select:none;
   background:var(--bg-2); border:1px solid var(--line); border-radius:999px; padding:7px 15px;
   font-size:13px; font-weight:500; color:var(--ink-4); transition:background .14s, border-color .14s, color .14s; }
