@@ -3,6 +3,9 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.1] — 2026-06-23 — Onboarding : ville pré-remplie par géolocalisation
+- **Étape 3 (ville)** : géolocalisation auto + reverse-geocoding (BigDataCloud, sans clé) recoupé avec Open-Meteo → champ pré-rempli avec la ville détectée. La saisie manuelle reste prioritaire si l'utilisateur tape avant la réponse.
+
 ## [0.18.0] — 2026-06-22 — Récap + bouton Google honnête
 - **Docs** : `docs/RECAP.md` (bilan complet + versions + points à travailler) et `docs/SETUP-OAUTH.md` (procédure OAuth).
 - **Fix bouton « Connecter Google »** : vérifie réellement le token (appel `userinfo`) avant d'afficher « Connecté » ; sinon « Réessayer ». Fin du faux « Connecté ». ⚠️ OAuth fonctionnel nécessite encore un client de type « Extension Chrome » (voir SETUP-OAUTH.md).
