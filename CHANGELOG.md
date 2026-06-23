@@ -3,6 +3,11 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.2] — 2026-06-23 — Onboarding sport évolutif (étape conditionnelle + club/équipe nationale)
+- **Étape Sports désormais conditionnelle** : si aucun widget Sport n'est coché à l'étape précédente, l'étape sports est sautée entièrement (avant : toujours affichée, même avec tous les widgets décochés).
+- **Profondeur ligue → club/équipe nationale** : après avoir choisi une ou plusieurs compétitions football, un sélecteur permet de choisir un club ou une équipe nationale à suivre dans chacune (réutilise `footballTeams()`, même mécanisme que les réglages). Une équipe nationale est techniquement une équipe au sein d'une compétition comme la Coupe du monde/l'Euro — pas de nouvelle donnée nécessaire.
+- **Suivi par joueur** : non inclus — aucune donnée joueur n'existe dans l'app (ni API, ni affichage). Noté en BACKLOG comme fonctionnalité à part.
+
 ## [0.18.1] — 2026-06-23 — Onboarding : ville pré-remplie par géolocalisation
 - **Étape 3 (ville)** : géolocalisation auto + reverse-geocoding (BigDataCloud, sans clé) recoupé avec Open-Meteo → champ pré-rempli avec la ville détectée. La saisie manuelle reste prioritaire si l'utilisateur tape avant la réponse.
 

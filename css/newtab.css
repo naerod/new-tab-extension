@@ -1335,6 +1335,8 @@ html[data-theme="light"] .sv-league{ background:var(--card); border-color:rgba(2
 /* Onboarding — titre de section (vraie ligne) + multi-select façon Discord */
 .ob-section{ border-top:1px solid var(--line); margin-top:16px; padding-top:14px; }
 .ob-section-t{ font-size:14.5px; font-weight:600; color:var(--ink); margin-bottom:10px; }
+.ob-team-slot{ margin-top:10px; }
+.ob-team-slot:empty{ display:none; }
 .ms{ position:relative; }
 .ms-field{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; min-height:44px; padding:7px 8px;
   background:var(--bg-2); border:1px solid var(--line); border-radius:10px; cursor:text; transition:border-color .15s; }

@@ -74,6 +74,7 @@
       "ob.widgets.title": "Tes widgets", "ob.widgets.sub": "Active ce que tu veux voir. Modifiable à tout moment via la roue ⚙ en haut à droite.",
       "ob.sports.title": "Quels sports suis-tu ?", "ob.sports.sub": "Coche tes sports — le widget Sport s'adapte. Tu pourras suivre une équipe précise dans les réglages.",
       "ob.sports.leagues": "Quelles ligues de football suivre ?", "ob.sports.leaguesPh": "Rechercher une ligue…",
+      "ob.sports.teams": "Des clubs ou équipes nationales en particulier ?", "common.loading": "Chargement…",
       "ob.done.title": "Tout est prêt{name} !",
       "ob.done.sub": "Chaque carte a une roue ⚙ pour la personnaliser : Steam ID pour CS2, tes URL pour les Sites, ta watchlist pour la Bourse…",
       "ob.done.btn": "Lancer mon tableau de bord",
@@ -155,6 +156,7 @@
       "ob.widgets.title": "Your widgets", "ob.widgets.sub": "Turn on what you want to see. Change it anytime from the ⚙ gear at the top right.",
       "ob.sports.title": "Which sports do you follow?", "ob.sports.sub": "Tick your sports — the Sport widget adapts. You can follow a specific team in settings.",
       "ob.sports.leagues": "Which football leagues to follow?", "ob.sports.leaguesPh": "Search a league…",
+      "ob.sports.teams": "Any specific clubs or national teams?", "common.loading": "Loading…",
       "ob.done.title": "All set{name}!",
       "ob.done.sub": "Every card has a ⚙ gear to personalize it: Steam ID for CS2, your URLs for Websites, your watchlist for Markets…",
       "ob.done.btn": "Open my dashboard",
@@ -3273,9 +3275,51 @@
           items,
           placeholder: t("ob.sports.leaguesPh"),
           isSelected: (v) => state.leagues.indexOf(v) !== -1,
-          onToggle: (v) => { const i = state.leagues.indexOf(v); if (i === -1) state.leagues.push(v); else state.leagues.splice(i, 1); },
+          onToggle: (v) => { const i = state.leagues.indexOf(v); if (i === -1) state.leagues.push(v); else { state.leagues.splice(i, 1); state.teams = (state.teams || []).filter((tm) => tm.comp !== v); render(); } },
         }));
         body.appendChild(sec);
+        // Clubs / équipes nationales — uniquement parmi les compétitions déjà choisies
+        // ci-dessus (une « équipe nationale » est juste une équipe au sein d'une
+        // compétition comme la Coupe du monde ou l'Euro — même mécanisme que les clubs).
+        if (state.leagues.length) {
+          if (!state.teams) state.teams = [];
+          const sec2 = el("div", "ob-section");
+          sec2.appendChild(el("h3", "ob-section-t", t("ob.sports.teams")));
+          const sel = el("select", "cfg-select");
+          sel.innerHTML = '<option value="">' + escHtml(t("sport.pick")) + "</option>" +
+            state.leagues.map((c) => '<option value="' + c + '"' + (c === state.pendingTeamLeague ? " selected" : "") + ">" + escHtml(leagues.find((l) => l.code === c) ? leagues.find((l) => l.code === c).name : c) + "</option>").join("");
+          sec2.appendChild(sel);
+          const slot = el("div", "ob-team-slot");
+          sec2.appendChild(slot);
+          function paintTeams() {
+            slot.innerHTML = "";
+            const code = state.pendingTeamLeague;
+            if (!code) return;
+            if (!state.teamsByComp) state.teamsByComp = {};
+            if (state.teamsByComp[code]) {
+              const tms = state.teamsByComp[code];
+              slot.appendChild(multiSelect({
+                items: tms.map((tm) => ({ value: String(tm.id), label: tm.shortName || tm.name, logo: tm.crest, emoji: "⚽" })),
+                placeholder: t("sport.addTeam"),
+                isSelected: (v) => state.teams.some((f) => String(f.id) === String(v)),
+                onToggle: (v) => {
+                  const i = state.teams.findIndex((f) => String(f.id) === String(v));
+                  if (i === -1) { const tm = tms.find((x) => String(x.id) === String(v)); state.teams.push({ id: String(v), name: tm ? (tm.shortName || tm.name) : v, comp: code, crest: tm ? tm.crest : "" }); }
+                  else state.teams.splice(i, 1);
+                },
+              }));
+            } else {
+              slot.textContent = t("common.loading");
+              const ready = (NT) => { NT.footballTeams(code).then((tms) => { state.teamsByComp[code] = tms; paintTeams(); }).catch(() => { slot.textContent = ""; }); };
+              if (window.NT) ready(window.NT); else window.addEventListener("nt:ready", () => ready(window.NT), { once: true });
+            }
+          }
+          sel.addEventListener("change", () => { state.pendingTeamLeague = sel.value || null; paintTeams(); });
+          if (!state.pendingTeamLeague) state.pendingTeamLeague = state.leagues[0];
+          sel.value = state.pendingTeamLeague || "";
+          paintTeams();
+          body.appendChild(sec2);
+        }
       }
     }
     function stepDone(body, nav) {
@@ -3284,15 +3328,29 @@
       nav.next.textContent = t("ob.done.btn");
     }
 
-    const STEPS = [stepWelcome, stepName, stepCity, stepGoogle, stepWidgets, stepSports, stepDone];
+    // chaque étape évolue selon les choix précédents (ex: §3.7) ; `skip` masque
+    // une étape devenue sans objet (widget désactivé) sans casser l'indexation.
+    const STEPS = [
+      { fn: stepWelcome },
+      { fn: stepName },
+      { fn: stepCity },
+      { fn: stepGoogle },
+      { fn: stepWidgets },
+      { fn: stepSports, skip: () => !state.widgets || !state.widgets.sport },
+      { fn: stepDone },
+    ];
+    const visibleSteps = () => STEPS.filter((s) => !s.skip || !s.skip());
 
     function finish() {
       if (state.name) CFG.set("user", "name", state.name.trim());
       if (state.place) { CFG.set("weather", "geo", false); CFG.set("weather", "place", { lat: state.place.lat, lon: state.place.lon, label: state.place.name }); }
       if (state.widgets) CFG.set("layout", "disabled", Layout.WIDGETS.filter((w) => !state.widgets[w.k]).map((w) => w.k));
-      if (window.NT) {
+      if (window.NT && state.widgets && state.widgets.sport) {
         if (state.sports) window.NT.storage.setConfig("sports", state.sports);
-        if (state.leagues && state.leagues.length) window.NT.storage.setConfig("follows", { football: state.leagues.map((c) => ({ type: "league", comp: c })) });
+        const follows = { football: [] };
+        if (state.leagues) follows.football = follows.football.concat(state.leagues.map((c) => ({ type: "league", comp: c })));
+        if (state.teams) follows.football = follows.football.concat(state.teams.map((tm) => ({ type: "team", id: tm.id, name: tm.name, comp: tm.comp, crest: tm.crest })));
+        window.NT.storage.setConfig("follows", follows);
       }
       if (SYNC) dbSet({ onboarded: true }, () => location.reload());
       else location.reload();
@@ -3302,15 +3360,19 @@
       const body = overlay.querySelector(".ob-body");
       const nav = { back: overlay.querySelector(".ob-back"), skip: overlay.querySelector(".ob-skip"), next: overlay.querySelector(".ob-next") };
       body.innerHTML = "";
+      const vis = visibleSteps();
       nav.back.style.display = step > 0 ? "" : "none";
       nav.skip.style.display = "none";
       nav.next.textContent = t("ob.continue");
-      STEPS[step](body, nav);
-      overlay.querySelector(".ob-dots").innerHTML = STEPS.map((_, i) => `<i class="${i === step ? "on" : ""}"></i>`).join("");
+      STEPS[step].fn(body, nav);
+      const curIdx = vis.indexOf(STEPS[step]);
+      overlay.querySelector(".ob-dots").innerHTML = vis.map((_, i) => `<i class="${i === curIdx ? "on" : ""}"></i>`).join("");
     }
     function go(d) {
       if (d > 0 && step === STEPS.length - 1) return finish();
-      step = Math.max(0, Math.min(STEPS.length - 1, step + d));
+      let s = step + d;
+      while (s > 0 && s < STEPS.length - 1 && STEPS[s].skip && STEPS[s].skip()) s += d;
+      step = Math.max(0, Math.min(STEPS.length - 1, s));
       render();
     }
     function build() {
@@ -3335,6 +3397,7 @@
       step = 0;
       state.name = CFG.get("user", "name", "") || "";
       state.place = null; state.google = false; state.widgets = null;
+      state.sports = null; state.leagues = null; state.teams = null; state.teamsByComp = null; state.pendingTeamLeague = null;
       if (!overlay) build();
       overlay.classList.add("open");
       render();
