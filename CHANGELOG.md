@@ -3,6 +3,12 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.4] — 2026-06-23 — OAuth Agenda corrigé (vrai client « Extension Chrome »)
+- **Cause du bug** : le `client_id` du manifest était un client OAuth de type Web/Desktop, incompatible avec `chrome.identity.getAuthToken` qui exige un client de type « Extension Chrome » lié à l'ID de l'extension. Conséquence : le bouton « Connecter Google » de l'onboarding affichait directement « Connecté » sans jamais montrer le vrai popup de consentement Google.
+- **Fix** : nouveau client OAuth créé sur la console Google Cloud (type Extension Chrome, Application ID = `ekpdcllabebccofbdifmeemflbncgiih`), écran de consentement passé en Production avec uniquement le scope `calendar.readonly` (vérification Google gratuite — scope « sensible », pas « restreint »).
+- **Gmail isolé** : le scope `gmail.readonly` est retiré de ce client/manifest. Le widget Gmail est temporairement déconnecté en attendant un **second projet Google Cloud dédié**, gardé en mode Testing (gratuit) tant que l'audit de sécurité Google (CASA, payant) requis pour les scopes Gmail en production n'est pas budgété. Voir BACKLOG (`[new_tab] Widget Gmail = avantage de la version Pro`).
+- **Pourquoi séparer** : un seul écran de consentement OAuth par projet Google Cloud, statut unique (Testing/Production) pour tous les scopes déclarés — impossible d'avoir l'Agenda public ET Gmail limité aux testeurs sur le même client.
+
 ## [0.18.3] — 2026-06-23 — Pop-up de réglages agrandie + pilules widgets resserrées
 - **Toutes les pop-up de réglages** (`.cfg-card`, communes à chaque widget) : largeur 400px → 520px, hauteur max 560px → 720px.
 - **Pilules à cocher** (widgets, métriques…) : espacement vertical entre lignes réduit (8px → 5px), espacement horizontal inchangé.
