@@ -67,7 +67,7 @@
       "ob.welcome.sub": "Ton nouveau tableau de bord : horloge, météo, agenda, actualités, bourse, raccourcis et plus. Personnalisons-le en quelques secondes.",
       "ob.start": "Commencer", "ob.continue": "Continuer", "ob.back": "Retour",
       "ob.name.title": "Comment t'appelles-tu ?", "ob.name.sub": "Pour personnaliser ta salutation.", "ob.name.ph": "Prénom",
-      "ob.city.title": "Où es-tu ?", "ob.city.sub": "Pour la météo locale. Sinon, ta géolocalisation sera utilisée.", "ob.city.ph": "Ville ou code postal",
+      "ob.city.title": "Où es-tu ?", "ob.city.sub": "Pour la météo locale. Sinon, ta géolocalisation sera utilisée.", "ob.city.ph": "Ville ou code postal", "ob.city.detecting": "Détection en cours…",
       "ob.google.title": "Ton compte Google",
       "ob.google.sub": "Connecte-toi pour afficher ton Agenda Google et tes mails Gmail (lecture seule). Tu peux aussi le faire plus tard.",
       "ob.google.btn": "Connecter Google", "ob.google.connecting": "Connexion…", "ob.google.ok": "✓ Connecté", "ob.google.retry": "Réessayer",
@@ -148,7 +148,7 @@
       "ob.welcome.sub": "Your new dashboard: clock, weather, calendar, news, markets, shortcuts and more. Let's set it up in a few seconds.",
       "ob.start": "Get started", "ob.continue": "Continue", "ob.back": "Back",
       "ob.name.title": "What's your name?", "ob.name.sub": "To personalize your greeting.", "ob.name.ph": "First name",
-      "ob.city.title": "Where are you?", "ob.city.sub": "For local weather. Otherwise your geolocation is used.", "ob.city.ph": "City or postal code",
+      "ob.city.title": "Where are you?", "ob.city.sub": "For local weather. Otherwise your geolocation is used.", "ob.city.ph": "City or postal code", "ob.city.detecting": "Detecting…",
       "ob.google.title": "Your Google account",
       "ob.google.sub": "Connect to show your Google Calendar and Gmail messages (read-only). You can also do it later.",
       "ob.google.btn": "Connect Google", "ob.google.connecting": "Connecting…", "ob.google.ok": "✓ Connected", "ob.google.retry": "Try again",
@@ -313,6 +313,23 @@
         seen.add(key); seenLabel.add(lkey); out.push(p);
       }
       return out.slice(0, 6);
+    });
+  }
+
+  /* Reverse-géocodage (BigDataCloud, sans clé) → nom de ville depuis lat/lon,
+     puis recoupé avec geocodeCity() pour obtenir un objet place au même format
+     (coordonnées Open-Meteo, libellé cohérent). Utilisé pour pré-remplir la ville
+     détectée par géolocalisation (onboarding). */
+  function reverseGeocodeCity(lat, lon) {
+    const url = "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" + lat + "&longitude=" + lon + "&localityLanguage=fr";
+    return fetch(url).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then((j) => {
+      const name = j.city || j.locality || (j.localityInfo && j.localityInfo.administrative && j.localityInfo.administrative.length && j.localityInfo.administrative[j.localityInfo.administrative.length - 1].name);
+      if (!name) throw new Error("no city");
+      return geocodeCity(name).then((places) => {
+        if (!places.length) throw new Error("no match");
+        const best = places.find((p) => !j.countryName || p.country === j.countryName) || places[0];
+        return best;
+      });
     });
   }
 
@@ -3175,8 +3192,24 @@
     function stepCity(body, nav) {
       body.appendChild(el("h2", "ob-title", t("ob.city.title")));
       body.appendChild(el("p", "ob-sub", t("ob.city.sub")));
-      body.appendChild(cityField((p) => { state.place = p; }));
+      let userPicked = false;
+      const field = cityField((p) => { state.place = p; userPicked = true; });
+      body.appendChild(field);
       nav.skip.style.display = "";
+      if (!state.place && navigator.geolocation) {
+        const inp = field.querySelector(".ob-input");
+        const ph = inp.placeholder;
+        inp.placeholder = t("ob.city.detecting");
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            reverseGeocodeCity(pos.coords.latitude, pos.coords.longitude)
+              .then((p) => { inp.placeholder = ph; if (userPicked) return; inp.value = p.label; state.place = p; })
+              .catch(() => { inp.placeholder = ph; });
+          },
+          () => { inp.placeholder = ph; },
+          { timeout: 5000, maximumAge: 600000 }
+        );
+      }
     }
     function stepGoogle(body, nav) {
       body.appendChild(el("h2", "ob-title", t("ob.google.title")));
