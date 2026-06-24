@@ -3,6 +3,9 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.5] — 2026-06-24 — Debug : log de l'erreur réelle au clic « Connecter Google »
+- Le bouton « Connecter » avalait silencieusement l'erreur retournée par `chrome.identity.getAuthToken` (`chrome.runtime.lastError`). Ajout d'un `console.error` pour voir le vrai message dans les DevTools de la page nouvel onglet (F12 → Console) — nécessaire pour diagnostiquer le « Réessayer » quasi instantané malgré le nouveau client OAuth « Extension Chrome ».
+
 ## [0.18.4] — 2026-06-23 — OAuth Agenda corrigé (vrai client « Extension Chrome »)
 - **Cause du bug** : le `client_id` du manifest était un client OAuth de type Web/Desktop, incompatible avec `chrome.identity.getAuthToken` qui exige un client de type « Extension Chrome » lié à l'ID de l'extension. Conséquence : le bouton « Connecter Google » de l'onboarding affichait directement « Connecté » sans jamais montrer le vrai popup de consentement Google.
 - **Fix** : nouveau client OAuth créé sur la console Google Cloud (type Extension Chrome, Application ID = `ekpdcllabebccofbdifmeemflbncgiih`), écran de consentement passé en Production avec uniquement le scope `calendar.readonly` (vérification Google gratuite — scope « sensible », pas « restreint »).

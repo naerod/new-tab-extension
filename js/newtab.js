@@ -3224,7 +3224,7 @@
           .then((tok) => fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers: { Authorization: "Bearer " + tok } })
             .then((r) => { if (!r.ok) { try { dropToken(tok); } catch (e) {} throw new Error("verify " + r.status); } }))
           .then(() => { state.google = true; btn.textContent = t("ob.google.ok"); btn.classList.add("ok"); btn.disabled = false; })
-          .catch(() => { state.google = false; btn.textContent = t("ob.google.retry"); btn.classList.remove("ok"); btn.disabled = false; });
+          .catch((e) => { console.error("[onboarding] Google connect failed:", e && e.message ? e.message : e); state.google = false; btn.textContent = t("ob.google.retry"); btn.classList.remove("ok"); btn.disabled = false; });
       });
       body.appendChild(btn);
       nav.skip.style.display = "";
