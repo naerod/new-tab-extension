@@ -3221,7 +3221,9 @@
         btn.disabled = true; btn.textContent = t("ob.google.connecting");
         // vérifie réellement le token (appel API) avant d'afficher « Connecté »
         getToken(true)
-          .then((tok) => fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers: { Authorization: "Bearer " + tok } })
+          // vérifie le token sur l'API réellement autorisée par son scope (calendar.readonly) —
+          // l'endpoint userinfo exige openid/email/profile, absents de ce scope, et renvoie 401 à tort.
+          .then((tok) => fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=1", { headers: { Authorization: "Bearer " + tok } })
             .then((r) => { if (!r.ok) { try { dropToken(tok); } catch (e) {} throw new Error("verify " + r.status); } }))
           .then(() => { state.google = true; btn.textContent = t("ob.google.ok"); btn.classList.add("ok"); btn.disabled = false; })
           .catch((e) => { console.error("[onboarding] Google connect failed:", e && e.message ? e.message : e); state.google = false; btn.textContent = t("ob.google.retry"); btn.classList.remove("ok"); btn.disabled = false; });

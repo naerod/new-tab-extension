@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.6] — 2026-06-25 — Fix vérification Agenda : 401 à tort sur userinfo
+- Diagnostic (logs ajoutés en 0.18.5) : `getAuthToken` fonctionnait déjà correctement (nouveau client OAuth « Extension Chrome » OK), mais la vérification du bouton appelait `oauth2/v3/userinfo`, qui exige les scopes `openid`/`email`/`profile` — absents puisque seul `calendar.readonly` est demandé. Résultat : 401 systématique, bouton bloqué sur « Réessayer » malgré une connexion réussie.
+- **Fix** : vérification basée sur `calendar/v3/users/me/calendarList` — l'API réellement couverte par le scope accordé.
+
 ## [0.18.5] — 2026-06-24 — Debug : log de l'erreur réelle au clic « Connecter Google »
 - Le bouton « Connecter » avalait silencieusement l'erreur retournée par `chrome.identity.getAuthToken` (`chrome.runtime.lastError`). Ajout d'un `console.error` pour voir le vrai message dans les DevTools de la page nouvel onglet (F12 → Console) — nécessaire pour diagnostiquer le « Réessayer » quasi instantané malgré le nouveau client OAuth « Extension Chrome ».
 
