@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Nouvel onglet",
-  "version": "0.18.9",
+  "version": "0.18.10",
   "description": "Page Nouvel onglet — horloge, météo, bourse, actualités, Google Agenda, raccourcis et IA. Design Claude.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvpIDbMl7v/NsgNCN6dngwQAPThBb+TkbFxZV3sACGIi3nNY+y9q5GA99P3qC0o8QW3xEFj8T8NL1d3R872VJhrifcqZolnASR8ZmHYMLc7zMpC2GwD0GBDwj3Uvpx8qpsUrS+Inf8nZBV4Ir/ByVJWtF3IyU0+CBFUJGvwnMjqfiJIT6UzkU28T5CDrikteoLGyqHhFhcyRhptN0r5I23iAMiQ/MU5YMyLOkaWCHQ60aGBbBTNR9rjoiqiuACLsS8AyN3RerxCNZWsSgmi7frLVZJv0Ew1jBiFrVHDBU0ZZfEshl3Qf2rFxLHdqoDsAhJiUJHzkePnM9osCa5zPzSQIDAQAB",
   "chrome_url_overrides": {

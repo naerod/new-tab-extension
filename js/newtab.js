@@ -1609,15 +1609,25 @@
         (j.items || []).forEach((ev) => {
           const s = ev.start || {}, e2 = ev.end || {};
           const title = ev.summary || "(sans titre)";
-          let day, label = title, allDay = false, start = null, end = null;
-          if (s.dateTime) { const d = new Date(s.dateTime); day = d.getDate(); label = label + " · " + frTime(d); start = d; end = e2.dateTime ? new Date(e2.dateTime) : null; }
-          else if (s.date) { day = parseInt(s.date.slice(8, 10), 10); allDay = true; }
-          else return;
           const attendees = (ev.attendees || []).filter((a) => !a.resource).map((a) => ({ name: a.displayName || a.email, status: a.responseStatus, self: !!a.self }));
-          (bucket[day] = bucket[day] || []).push({
-            label, link: ev.htmlLink || "https://calendar.google.com", allDay, color: cal.color,
-            title, location: ev.location || "", attendees, start, end, calendar: cal.summary,
-          });
+          const addDay = (day, label, allDay, start, end, multi) => {
+            (bucket[day] = bucket[day] || []).push({
+              label, link: ev.htmlLink || "https://calendar.google.com", allDay, color: cal.color,
+              title, location: ev.location || "", attendees, start, end, calendar: cal.summary, multi,
+            });
+          };
+          if (s.dateTime) {
+            const d = new Date(s.dateTime), end = e2.dateTime ? new Date(e2.dateTime) : null;
+            addDay(d.getDate(), title + " · " + frTime(d), false, d, end, false);
+          } else if (s.date) {
+            // évènement « journée entière » — peut s'étaler sur plusieurs jours (fin exclusive côté Google).
+            const startDate = new Date(s.date + "T00:00:00");
+            const endDate = e2.date ? new Date(e2.date + "T00:00:00") : new Date(startDate.getTime() + 86400000);
+            const multi = (endDate - startDate) > 86400000;
+            for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+              if (d.getFullYear() === y && d.getMonth() === m) addDay(d.getDate(), title, true, null, null, multi);
+            }
+          }
         });
       }));
       monthCache[key] = bucket;
@@ -1710,7 +1720,7 @@
       evs = evs.slice().sort((a, b) => (a.allDay === b.allDay) ? ((a.start && b.start) ? a.start - b.start : 0) : (a.allDay ? -1 : 1));
       if (!evs.length) return '<div class="dd-list"><div class="empty">Aucun évènement ce jour-là.</div></div>';
       return '<div class="dd-list">' + evs.map((e) => {
-        const time = e.allDay ? "Toute la journée" : (e.start ? frTime(e.start) + (e.end ? " – " + frTime(e.end) : "") : "");
+        const time = e.allDay ? (e.multi ? "Toute la journée · plusieurs jours" : "Toute la journée") : (e.start ? frTime(e.start) + (e.end ? " – " + frTime(e.end) : "") : "");
         const attendeesHtml = e.attendees && e.attendees.length
           ? '<div class="dd-attendees">' + e.attendees.map((a) => `<span class="dd-att${a.self ? " self" : ""}" title="${esc(STATUS[a.status] || "")}">${esc(a.name)}</span>`).join("") + '</div>' : "";
         return `<a class="dd-ev" href="${esc(e.link)}" target="_blank" rel="noopener"${e.color ? ` style="border-left-color:${esc(e.color)}"` : ""}>

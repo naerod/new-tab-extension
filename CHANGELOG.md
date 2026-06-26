@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.10] — 2026-06-26 — Agenda : évènements « journée entière » multi-jours
+- **Bug** : un évènement journée entière de plusieurs jours (ex. "WE" du samedi au dimanche) n'apparaissait que sur son jour de début — la date de fin (exclusive côté API Google) n'était jamais utilisée.
+- **Fix** : l'évènement est désormais répété sur chaque jour de sa plage (samedi ET dimanche pour "WE"). La pop-up de détail (v0.18.9) indique "Toute la journée · plusieurs jours" pour ces évènements.
+
 ## [0.18.9] — 2026-06-26 — Agenda : pop-up de détail au clic sur un jour
 - Clic sur un jour (vue mois ou semaine) → pop-up listant tous les évènements de cette journée : titre complet, horaire, lieu (icône SVG maison, pas de police externe), invités (avec statut de réponse en tooltip), agenda d'origine. Remplace l'ancien comportement (ouverture directe de la vue jour Google Calendar dans un nouvel onglet).
 - Clic sur une chip d'évènement (déjà existant) continue d'ouvrir le lien direct vers l'évènement.
