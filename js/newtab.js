@@ -1734,9 +1734,10 @@
       }).join("") + '</div>';
     }
     grid.addEventListener("click", (e) => {
-      if (e.target.closest("a.cal-ev, a.cal-wev")) return;
       const day = e.target.closest("[data-date]");
       if (!day) return;
+      const chip = e.target.closest("a.cal-ev, a.cal-wev");
+      if (chip) e.preventDefault();   // une chip d'évènement ouvre aussi le détail du jour, pas son lien direct
       const [y, m, dn] = day.dataset.date.split("-").map((x) => parseInt(x, 10));
       const lbl = new Intl.DateTimeFormat(LOCALE(), { weekday: "long", day: "numeric", month: "long" }).format(new Date(y, m - 1, dn));
       Router.open(lbl, dayDetailHtml(day.dataset.date), null, "day-panel");

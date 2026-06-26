@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.12] — 2026-06-26 — Clic sur une chip d'évènement → détail du jour (plus le lien direct)
+- Dans la grille mois/semaine, cliquer sur une chip d'évènement ouvre désormais la pop-up de détail du jour (comme cliquer ailleurs sur la journée), au lieu d'ouvrir directement le lien Google Calendar.
+- Le lien direct reste accessible **depuis la pop-up** : cliquer sur l'évènement à l'intérieur du détail du jour redirige vers Google Calendar, comme avant.
+
 ## [0.18.11] — 2026-06-26 — Pop-up jour : bouton « Voir la journée » + taille réduite
 - Bouton **« Voir la journée sur Google Agenda »** en haut de la pop-up de détail (lien direct vers la vue jour Google Calendar — comportement qu'avait l'ancien clic direct sur un jour, avant la pop-up de détail en v0.18.9).
 - `Router.open` accepte un paramètre optionnel de classe CSS pour personnaliser la taille du panneau par appelant ; la pop-up jour utilise un panneau plus compact (560px) que celle du widget Sport (1280px, inchangée).
