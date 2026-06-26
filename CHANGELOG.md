@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.14] — 2026-06-26 — Fix décalage de la page à l'ouverture d'une pop-up
+- **Cause** : `body.in-view{ overflow:hidden }` (Router/Detail) masque la barre de défilement à l'ouverture d'une pop-up, ce qui élargit la page de la largeur de l'ancienne barre → léger décalage visuel de l'arrière-plan.
+- **Fix** : `scrollbar-gutter: stable` sur `html` — réserve toujours la place de la barre, qu'elle soit affichée ou non. Solution standard, CSS pur, sans JS ; safe puisque l'extension cible exclusivement Chrome.
+
 ## [0.18.13] — 2026-06-26 — Pop-up jour : bouton « Voir la journée » repensé
 - Déplacé du corps de la pop-up vers l'en-tête, sur la même ligne que la date (entre le titre et le ×).
 - Devenu une icône seule (flèche de redirection `SVGI.extLink`, nouvelle icône) au lieu d'un bouton texte souligné.
