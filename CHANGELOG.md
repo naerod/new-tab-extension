@@ -3,6 +3,9 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.19] — 2026-06-26 — Scrollbar des pop-up de réglages : espace symétrique
+- Ajustement du padding droit de `.cfg-body` (12px → 28px) pour que l'espace entre le contenu et la scrollbar soit égal à l'espace entre la scrollbar et le bord de la pop-up (~18px des deux côtés, calculé avec la largeur de scrollbar de 10px et le padding de `.modal-card` de 22px).
+
 ## [0.18.18] — 2026-06-26 — Espace entre le contenu et la scrollbar des pop-up de réglages
 - `.cfg-body` (corps scrollable des pop-up de réglages) : padding droit élargi (4px → 12px) pour créer un espace visuel entre le contenu (listes, boutons…) et la scrollbar, qui collait directement au contenu.
 
