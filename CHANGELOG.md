@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.11] — 2026-06-26 — Pop-up jour : bouton « Voir la journée » + taille réduite
+- Bouton **« Voir la journée sur Google Agenda »** en haut de la pop-up de détail (lien direct vers la vue jour Google Calendar — comportement qu'avait l'ancien clic direct sur un jour, avant la pop-up de détail en v0.18.9).
+- `Router.open` accepte un paramètre optionnel de classe CSS pour personnaliser la taille du panneau par appelant ; la pop-up jour utilise un panneau plus compact (560px) que celle du widget Sport (1280px, inchangée).
+
 ## [0.18.10] — 2026-06-26 — Agenda : évènements « journée entière » multi-jours
 - **Bug** : un évènement journée entière de plusieurs jours (ex. "WE" du samedi au dimanche) n'apparaissait que sur son jour de début — la date de fin (exclusive côté API Google) n'était jamais utilisée.
 - **Fix** : l'évènement est désormais répété sur chaque jour de sa plage (samedi ET dimanche pour "WE"). La pop-up de détail (v0.18.9) indique "Toute la journée · plusieurs jours" pour ces évènements.

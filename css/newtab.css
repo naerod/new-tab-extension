@@ -1233,6 +1233,8 @@ html[data-theme="light"] .view-panel{ background:#fff; box-shadow:0 24px 70px rg
 .view-close svg{ width:20px; height:20px; }
 .view-title{ font-size:23px; font-weight:600; color:var(--ink); letter-spacing:-.01em; }
 .view-body{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:var(--gap); align-items:start; }
+.view-panel.day-panel{ width:min(560px,92vw); height:auto; max-height:80vh; padding:22px 24px 26px; }
+.dd-gcal{ display:inline-flex; margin-bottom:16px; }
 .dd-list{ grid-column:1/-1; display:flex; flex-direction:column; gap:10px; }
 .dd-ev{ display:block; background:linear-gradient(180deg,var(--card-2),var(--card)); border:1px solid var(--line); border-left:3px solid var(--line-2); border-radius:var(--r); padding:14px 16px; text-decoration:none; transition:border-color .14s, background .14s; }
 .dd-ev:hover{ border-color:var(--accent-line); background:var(--hover); }

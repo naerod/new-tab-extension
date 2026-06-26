@@ -1718,8 +1718,9 @@
       let evs = (monthCache[key] || {})[dn] || [];
       if (!showAllDay) evs = evs.filter((e) => !e.allDay);
       evs = evs.slice().sort((a, b) => (a.allDay === b.allDay) ? ((a.start && b.start) ? a.start - b.start : 0) : (a.allDay ? -1 : 1));
-      if (!evs.length) return '<div class="dd-list"><div class="empty">Aucun évènement ce jour-là.</div></div>';
-      return '<div class="dd-list">' + evs.map((e) => {
+      const gcalLink = `<a class="btn dd-gcal" href="https://calendar.google.com/calendar/r/day/${y}/${m}/${dn}" target="_blank" rel="noopener">Voir la journée sur Google Agenda</a>`;
+      if (!evs.length) return gcalLink + '<div class="dd-list"><div class="empty">Aucun évènement ce jour-là.</div></div>';
+      return gcalLink + '<div class="dd-list">' + evs.map((e) => {
         const time = e.allDay ? (e.multi ? "Toute la journée · plusieurs jours" : "Toute la journée") : (e.start ? frTime(e.start) + (e.end ? " – " + frTime(e.end) : "") : "");
         const attendeesHtml = e.attendees && e.attendees.length
           ? '<div class="dd-attendees">' + e.attendees.map((a) => `<span class="dd-att${a.self ? " self" : ""}" title="${esc(STATUS[a.status] || "")}">${esc(a.name)}</span>`).join("") + '</div>' : "";
@@ -1738,7 +1739,7 @@
       if (!day) return;
       const [y, m, dn] = day.dataset.date.split("-").map((x) => parseInt(x, 10));
       const lbl = new Intl.DateTimeFormat(LOCALE(), { weekday: "long", day: "numeric", month: "long" }).format(new Date(y, m - 1, dn));
-      Router.open(lbl, dayDetailHtml(day.dataset.date));
+      Router.open(lbl, dayDetailHtml(day.dataset.date), null, "day-panel");
     });
 
     // clic ailleurs sur la carte → vue mois aujourd'hui
@@ -2581,11 +2582,11 @@
      ============================================================ */
   const Router = (function () {
     const layer = $("#viewLayer");
-    function open(title, bodyHtml, afterRender) {
+    function open(title, bodyHtml, afterRender, panelClass) {
       if (!layer) return;
       const closeLbl = LANG === "fr" ? "Fermer" : "Close";
       layer.innerHTML = '<div class="view-backdrop"></div>'
-        + '<div class="view-panel" role="dialog" aria-modal="true" aria-label="' + escHtml(title) + '">'
+        + '<div class="view-panel' + (panelClass ? " " + panelClass : "") + '" role="dialog" aria-modal="true" aria-label="' + escHtml(title) + '">'
         + '<div class="view-head"><h2 class="view-title">' + escHtml(title) + '</h2>'
         + '<button type="button" class="view-close gear" aria-label="' + closeLbl + '">' + SVGI.close + '</button></div>'
         + '<div class="view-body">' + bodyHtml + '</div></div>';
