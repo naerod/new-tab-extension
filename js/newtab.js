@@ -281,6 +281,7 @@
       close: w('<path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>'),
       eye: w('<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>'),
       eyeOff: w('<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75C21.27 7.61 17 4.5 12 4.5c-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53a5 5 0 0 1-5-5c0-.79.2-1.53.53-2.2zm4.31-.78 3.15 3.15.02-.16a3 3 0 0 0-3-3l-.17.01z"/>'),
+      pin: w('<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/>'),
     };
   })();
 
@@ -1606,12 +1607,17 @@
         let j;
         try { j = await apiGet(url, tok); } catch (e) { console.warn("[agenda] calendar", cal.id, e); return; }
         (j.items || []).forEach((ev) => {
-          const s = ev.start || {};
-          let day, label = ev.summary || "(sans titre)", allDay = false;
-          if (s.dateTime) { const d = new Date(s.dateTime); day = d.getDate(); label = label + " · " + frTime(d); }
+          const s = ev.start || {}, e2 = ev.end || {};
+          const title = ev.summary || "(sans titre)";
+          let day, label = title, allDay = false, start = null, end = null;
+          if (s.dateTime) { const d = new Date(s.dateTime); day = d.getDate(); label = label + " · " + frTime(d); start = d; end = e2.dateTime ? new Date(e2.dateTime) : null; }
           else if (s.date) { day = parseInt(s.date.slice(8, 10), 10); allDay = true; }
           else return;
-          (bucket[day] = bucket[day] || []).push({ label, link: ev.htmlLink || "https://calendar.google.com", allDay, color: cal.color });
+          const attendees = (ev.attendees || []).filter((a) => !a.resource).map((a) => ({ name: a.displayName || a.email, status: a.responseStatus, self: !!a.self }));
+          (bucket[day] = bucket[day] || []).push({
+            label, link: ev.htmlLink || "https://calendar.google.com", allDay, color: cal.color,
+            title, location: ev.location || "", attendees, start, end, calendar: cal.summary,
+          });
         });
       }));
       monthCache[key] = bucket;
@@ -1694,12 +1700,35 @@
     const gear = card.querySelector(".head-right .gear:not(.cal-nav)");
     if (gear) { gear.setAttribute("aria-label", "Réglages de l'agenda"); gear.addEventListener("click", openSettings); }
 
-    // clic jour → vue jour Google Agenda ; clic évènement → son lien
+    // clic jour → pop-up détail des évènements ; clic évènement (chip) → son lien direct
+    const STATUS = { accepted: "✓ Présent", declined: "✗ Décliné", tentative: "? Peut-être", needsAction: "En attente" };
+    function dayDetailHtml(dateStr) {
+      const [y, m, dn] = dateStr.split("-").map((x) => parseInt(x, 10));
+      const key = y + "-" + (m - 1);
+      let evs = (monthCache[key] || {})[dn] || [];
+      if (!showAllDay) evs = evs.filter((e) => !e.allDay);
+      evs = evs.slice().sort((a, b) => (a.allDay === b.allDay) ? ((a.start && b.start) ? a.start - b.start : 0) : (a.allDay ? -1 : 1));
+      if (!evs.length) return '<div class="dd-list"><div class="empty">Aucun évènement ce jour-là.</div></div>';
+      return '<div class="dd-list">' + evs.map((e) => {
+        const time = e.allDay ? "Toute la journée" : (e.start ? frTime(e.start) + (e.end ? " – " + frTime(e.end) : "") : "");
+        const attendeesHtml = e.attendees && e.attendees.length
+          ? '<div class="dd-attendees">' + e.attendees.map((a) => `<span class="dd-att${a.self ? " self" : ""}" title="${esc(STATUS[a.status] || "")}">${esc(a.name)}</span>`).join("") + '</div>' : "";
+        return `<a class="dd-ev" href="${esc(e.link)}" target="_blank" rel="noopener"${e.color ? ` style="border-left-color:${esc(e.color)}"` : ""}>
+          <div class="dd-time">${esc(time)}</div>
+          <div class="dd-title">${esc(e.title)}</div>
+          ${e.location ? `<div class="dd-loc">${SVGI.pin}${esc(e.location)}</div>` : ""}
+          ${attendeesHtml}
+          <div class="dd-cal">${esc(e.calendar)}</div>
+        </a>`;
+      }).join("") + '</div>';
+    }
     grid.addEventListener("click", (e) => {
-      if (e.target.closest("a")) return;
+      if (e.target.closest("a.cal-ev, a.cal-wev")) return;
       const day = e.target.closest("[data-date]");
       if (!day) return;
-      window.open("https://calendar.google.com/calendar/r/day/" + day.dataset.date.replace(/-/g, "/"), "_blank", "noopener");
+      const [y, m, dn] = day.dataset.date.split("-").map((x) => parseInt(x, 10));
+      const lbl = new Intl.DateTimeFormat(LOCALE(), { weekday: "long", day: "numeric", month: "long" }).format(new Date(y, m - 1, dn));
+      Router.open(lbl, dayDetailHtml(day.dataset.date));
     });
 
     // clic ailleurs sur la carte → vue mois aujourd'hui

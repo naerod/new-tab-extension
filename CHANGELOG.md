@@ -3,6 +3,11 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.9] — 2026-06-26 — Agenda : pop-up de détail au clic sur un jour
+- Clic sur un jour (vue mois ou semaine) → pop-up listant tous les évènements de cette journée : titre complet, horaire, lieu (icône SVG maison, pas de police externe), invités (avec statut de réponse en tooltip), agenda d'origine. Remplace l'ancien comportement (ouverture directe de la vue jour Google Calendar dans un nouvel onglet).
+- Clic sur une chip d'évènement (déjà existant) continue d'ouvrir le lien direct vers l'évènement.
+- Nouvelle icône `SVGI.pin` (lieu), dans le même style inline-SVG que les autres icônes du projet.
+
 ## [0.18.8] — 2026-06-26 — Agenda : tous les calendriers, pas que le principal
 - **Bug** : le widget ne récupérait que `calendars/primary/events`, ignorant les agendas secondaires/partagés (ex. agendas d'événements, agendas partagés par des amis).
 - **Fix** : récupération de la liste complète des agendas (`calendarList`), fusion des événements de tous les agendas affichés (couleur de chaque agenda reprise sur les chips, comme dans Google Calendar natif).
