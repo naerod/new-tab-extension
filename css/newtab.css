@@ -338,6 +338,14 @@
     --mono:'Google Sans Code',ui-monospace,'SF Mono',Menlo,monospace;
   }
 
+  /* Scrollbar — par défaut Chrome affiche une scrollbar claire native qui ignore le thème
+     de la page (surtout visible en thème sombre). Personnalisée pour suivre --line-2/--ink-4. */
+  *{ scrollbar-width:thin; scrollbar-color:var(--line-2) transparent; }
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background-color:var(--line-2); border-radius:999px; border:2px solid transparent; background-clip:content-box; }
+  ::-webkit-scrollbar-thumb:hover{ background-color:var(--ink-4); background-clip:content-box; }
+
   /* ===== Thème clair — surfaces blanches sur fond crème, contraste AA ===== */
   html[data-theme="light"]{
     --bg:#ffffff;          /* pure white page */

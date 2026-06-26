@@ -1,6 +1,6 @@
 {
   "name": "newtab-extension",
-  "version": "0.18.16",
+  "version": "0.18.17",
   "private": true,
   "type": "module",
   "description": "Chrome MV3 new tab extension — dev/test tooling only (not shipped).",

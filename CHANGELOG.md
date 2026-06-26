@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.17] — 2026-06-26 — Scrollbar personnalisée (suit le thème sombre/clair)
+- Chrome affichait sa scrollbar native, toujours claire, même en thème sombre — visible et discordant sur les pop-up (réglages, détail jour) qui scrollent.
+- Scrollbar redessinée (`::-webkit-scrollbar` + `scrollbar-color`) avec les couleurs déjà utilisées par le thème (`--line-2`/`--ink-4`) — s'adapte automatiquement entre sombre et clair.
+
 ## [0.18.16] — 2026-06-26 — Glisser-déposer sur les listes réordonnables (`cfg-list`)
 - Composant partagé `cfg-list` (Agendas affichés, fuseaux horaires, etc.) : ajout du glisser-déposer (HTML5 drag-and-drop natif) en plus des flèches haut/bas déjà présentes — les deux méthodes coexistent. Poignée visuelle (icône grip) + retour visuel pendant le glisser (opacité réduite sur l'élément déplacé, bordure accentuée sur la cible).
 - Le bouton masquer/afficher (œil) est inchangé.
