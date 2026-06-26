@@ -1003,7 +1003,8 @@ img.fav-dark{ filter:brightness(0) invert(1); }
 .cfg-litem .grip{ flex:none; width:16px; height:16px; color:var(--ink-4); cursor:grab; display:inline-flex; align-items:center; justify-content:center; }
 .cfg-litem .grip svg{ width:14px; height:14px; }
 .cfg-litem.dragging{ opacity:.4; }
-.cfg-litem.drag-over{ border-color:var(--accent-line); }
+.cfg-litem.drag-over-top{ box-shadow:0 -2px 0 0 var(--accent); }
+.cfg-litem.drag-over-bottom{ box-shadow:0 2px 0 0 var(--accent); }
 .cfg-add{ margin-top:4px; }
 
 /* groupe de cases sélectionnables (widgets, métriques…) — pilules sans checkbox :

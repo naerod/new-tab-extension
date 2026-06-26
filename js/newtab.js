@@ -598,6 +598,7 @@
         const r = row(lab(f), null, true);
         const list = document.createElement("div"); list.className = "cfg-list";
         let dragIndex = null;
+        const clearIndicators = () => list.querySelectorAll(".cfg-litem").forEach((el) => el.classList.remove("drag-over-top", "drag-over-bottom"));
         function paint() {
           list.innerHTML = "";
           f.items.forEach((it, i) => {
@@ -605,24 +606,30 @@
             const li = document.createElement("div"); li.className = "cfg-litem" + (it.hidden ? " off" : "");
             li.draggable = true;
             li.innerHTML = `<span class="grip" aria-hidden="true">${SVGI.grip}</span>` +
-              `<button type="button" class="up" aria-label="Monter" ${i === 0 ? "disabled" : ""}>${SVGI.chevU}</button>` +
-              `<button type="button" class="dn" aria-label="Descendre" ${i === f.items.length - 1 ? "disabled" : ""}>${SVGI.chevD}</button>` +
               `<span class="nm">${escHtml(it.label)}${it.sub ? "<small>" + escHtml(it.sub) + "</small>" : ""}</span>` +
               (f.onToggle ? `<button type="button" class="vis" aria-label="Afficher/masquer">${it.hidden ? SVGI.eyeOff : SVGI.eye}</button>` : "") +
               (f.onRemove ? `<button type="button" class="rm" aria-label="Supprimer">${SVGI.close}</button>` : "");
-            const swap = (from, to) => {
-              if (from < 0 || to < 0 || from >= f.items.length || to >= f.items.length) return;
-              const x = f.items.splice(from, 1)[0]; f.items.splice(to, 0, x); f.move(from, to); paint();
-            };
-            li.querySelector(".up").addEventListener("click", () => { if (i > 0) swap(i, i - 1); });
-            li.querySelector(".dn").addEventListener("click", () => { if (i < f.items.length - 1) swap(i, i + 1); });
             if (f.onToggle) li.querySelector(".vis").addEventListener("click", () => { f.onToggle(it, i); paint(); });
             if (f.onRemove) li.querySelector(".rm").addEventListener("click", () => { f.onRemove(it, i); f.items.splice(i, 1); paint(); });
             li.addEventListener("dragstart", (e) => { dragIndex = i; e.dataTransfer.effectAllowed = "move"; li.classList.add("dragging"); });
-            li.addEventListener("dragend", () => { li.classList.remove("dragging"); dragIndex = null; });
-            li.addEventListener("dragover", (e) => { e.preventDefault(); if (dragIndex !== null && dragIndex !== i) li.classList.add("drag-over"); });
-            li.addEventListener("dragleave", () => li.classList.remove("drag-over"));
-            li.addEventListener("drop", (e) => { e.preventDefault(); li.classList.remove("drag-over"); if (dragIndex !== null && dragIndex !== i) swap(dragIndex, i); });
+            li.addEventListener("dragend", () => { clearIndicators(); li.classList.remove("dragging"); dragIndex = null; });
+            li.addEventListener("dragover", (e) => {
+              e.preventDefault();
+              if (dragIndex === null || dragIndex === i) return;
+              clearIndicators();
+              const before = (e.clientY - li.getBoundingClientRect().top) < li.offsetHeight / 2;
+              li.classList.add(before ? "drag-over-top" : "drag-over-bottom");
+            });
+            li.addEventListener("drop", (e) => {
+              e.preventDefault();
+              clearIndicators();
+              if (dragIndex === null || dragIndex === i) return;
+              const before = (e.clientY - li.getBoundingClientRect().top) < li.offsetHeight / 2;
+              let to = before ? i : i + 1;
+              if (dragIndex < to) to -= 1;   // l'élément retiré décale les index suivants
+              if (to === dragIndex) return;
+              const x = f.items.splice(dragIndex, 1)[0]; f.items.splice(to, 0, x); f.move(dragIndex, to); paint();
+            });
             list.appendChild(li);
           });
         }

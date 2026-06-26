@@ -3,6 +3,11 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.20] — 2026-06-26 — Listes réordonnables : drag-and-drop uniquement, vraie insertion
+- Retrait des flèches haut/bas sur `cfg-list` (toutes les listes réordonnables de l'app) — uniquement le glisser-déposer désormais.
+- **Fix du bug visuel** : le highlight "drag-over" n'était jamais nettoyé sur les lignes précédemment survolées pendant un glissement (lignes qui semblaient se dupliquer/chevaucher).
+- **Fix du comportement** : avant, déposer sur une ligne échangeait simplement les deux positions. Maintenant, le drop **insère** l'élément avant ou après la ligne survolée selon que le curseur est dans sa moitié haute ou basse (ligne d'insertion visuelle en accent), comme une vraie liste triable.
+
 ## [0.18.19] — 2026-06-26 — Scrollbar des pop-up de réglages : espace symétrique
 - Ajustement du padding droit de `.cfg-body` (12px → 28px) pour que l'espace entre le contenu et la scrollbar soit égal à l'espace entre la scrollbar et le bord de la pop-up (~18px des deux côtés, calculé avec la largeur de scrollbar de 10px et le padding de `.modal-card` de 22px).
 
