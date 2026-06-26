@@ -3,6 +3,11 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.8] — 2026-06-26 — Agenda : tous les calendriers, pas que le principal
+- **Bug** : le widget ne récupérait que `calendars/primary/events`, ignorant les agendas secondaires/partagés (ex. agendas d'événements, agendas partagés par des amis).
+- **Fix** : récupération de la liste complète des agendas (`calendarList`), fusion des événements de tous les agendas affichés (couleur de chaque agenda reprise sur les chips, comme dans Google Calendar natif).
+- **Nouveau réglage** : "Agendas affichés" (multiselect) dans les réglages du widget Agenda, pour masquer ceux qu'on ne veut pas voir.
+
 ## [0.18.7] — 2026-06-26 — Projet Google Cloud dédié pour l'Agenda (`naerod-newtab`)
 - **Problème découvert** : le client OAuth de l'Agenda partageait le même écran de consentement Google que mon propre accès Claude/MCP (projet `dorianjulien-claude-mcp`), tous deux affichés sous le nom « Claude MCP » dans les permissions Google de l'utilisateur — impossible de les distinguer ou de révoquer l'un sans l'autre.
 - **Fix** : nouveau projet Google Cloud dédié `naerod-newtab` (API Calendar activée), écran de consentement « Naerod's new tab », scope `calendar.readonly`, statut **Production**, nouveau client OAuth « Extension Chrome ». `manifest.json` mis à jour avec ce nouveau `client_id`.

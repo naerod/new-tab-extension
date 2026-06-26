@@ -1495,6 +1495,8 @@
     let view = CFG.get("agenda", "view", "month");          // month | week
     let weekStart = CFG.get("agenda", "weekStart", "mon");   // mon | sun
     let showAllDay = CFG.get("agenda", "allDay", true);
+    let calendars = null;                                    // [{id,summary,color}] — tous les agendas du compte
+    let hiddenCalendars = CFG.get("agenda", "hiddenCalendars", []);   // ids désactivés (par défaut : tous affichés)
 
     const pad2 = (n) => String(n).padStart(2, "0");
     const frTime = (d) => { const h = d.getHours(), mn = d.getMinutes(); return mn ? h + "h" + String(mn).padStart(2, "0") : h + "h"; };
@@ -1531,7 +1533,7 @@
         let evs = evMap[dn] || [];
         if (!showAllDay) evs = evs.filter((e) => !e.allDay);
         const chips = evs.slice(0, 2)
-          .map((e) => `<a class="cal-ev" href="${esc(e.link)}" target="_blank" rel="noopener" title="${esc(e.label)}">${esc(e.label)}</a>`).join("");
+          .map((e) => `<a class="cal-ev" href="${esc(e.link)}" target="_blank" rel="noopener" title="${esc(e.label)}"${e.color ? ` style="background:${esc(e.color)}22;border-color:${esc(e.color)}55;color:${esc(e.color)}"` : ""}>${esc(e.label)}</a>`).join("");
         const more = evs.length > 2 ? `<span class="cal-more">+${evs.length - 2}</span>` : "";
         const date = y + "-" + pad2(m + 1) + "-" + pad2(dn);
         html += `<div class="cal-day${today ? " today" : ""}" data-date="${date}"><span class="num tnum">${dn}</span>${chips}${more}</div>`;
@@ -1559,7 +1561,7 @@
       grid.innerHTML = '<div class="cal-week">' + days.map((d, i) => {
         const today = d.toDateString() === todayKey;
         const evs = evForDate(d);
-        const evHtml = evs.map((e) => `<a class="cal-wev" href="${esc(e.link)}" target="_blank" rel="noopener" title="${esc(e.label)}">${esc(e.label)}</a>`).join("");
+        const evHtml = evs.map((e) => `<a class="cal-wev" href="${esc(e.link)}" target="_blank" rel="noopener" title="${esc(e.label)}"${e.color ? ` style="background:${esc(e.color)}22;border-color:${esc(e.color)}55;color:${esc(e.color)}"` : ""}>${esc(e.label)}</a>`).join("");
         const date = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
         return `<div class="cal-wday${today ? " today" : ""}" data-date="${date}">
             <div class="wd-h">${lbls[i]}<b class="tnum">${d.getDate()}</b></div>
@@ -1580,26 +1582,38 @@
       return r.json();
     }
 
+    async function ensureCalendarList(tok) {
+      if (calendars) return calendars;
+      const j = await apiGet("https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250", tok);
+      calendars = (j.items || []).map((c) => ({ id: c.id, summary: c.summaryOverride || c.summary || c.id, color: c.backgroundColor || "" }));
+      return calendars;
+    }
+    function visibleCalendars() { return (calendars || []).filter((c) => hiddenCalendars.indexOf(c.id) === -1); }
+
     async function fetchMonth(y, m, interactive) {
       const key = y + "-" + m;
       if (monthCache[key]) return;
       const tok = await getToken(interactive);
       connected = true;
+      await ensureCalendarList(tok);
       const timeMin = new Date(y, m, 1).toISOString();
       const timeMax = new Date(y, m + 1, 1).toISOString();
-      const url = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
-        + "?singleEvents=true&orderBy=startTime&maxResults=100"
-        + "&timeMin=" + encodeURIComponent(timeMin) + "&timeMax=" + encodeURIComponent(timeMax);
-      const j = await apiGet(url, tok);
       const bucket = {};
-      (j.items || []).forEach((ev) => {
-        const s = ev.start || {};
-        let day, label = ev.summary || "(sans titre)", allDay = false;
-        if (s.dateTime) { const d = new Date(s.dateTime); day = d.getDate(); label = label + " · " + frTime(d); }
-        else if (s.date) { day = parseInt(s.date.slice(8, 10), 10); allDay = true; }
-        else return;
-        (bucket[day] = bucket[day] || []).push({ label, link: ev.htmlLink || "https://calendar.google.com", allDay });
-      });
+      await Promise.all(visibleCalendars().map(async (cal) => {
+        const url = "https://www.googleapis.com/calendar/v3/calendars/" + encodeURIComponent(cal.id) + "/events"
+          + "?singleEvents=true&orderBy=startTime&maxResults=100"
+          + "&timeMin=" + encodeURIComponent(timeMin) + "&timeMax=" + encodeURIComponent(timeMax);
+        let j;
+        try { j = await apiGet(url, tok); } catch (e) { console.warn("[agenda] calendar", cal.id, e); return; }
+        (j.items || []).forEach((ev) => {
+          const s = ev.start || {};
+          let day, label = ev.summary || "(sans titre)", allDay = false;
+          if (s.dateTime) { const d = new Date(s.dateTime); day = d.getDate(); label = label + " · " + frTime(d); }
+          else if (s.date) { day = parseInt(s.date.slice(8, 10), 10); allDay = true; }
+          else return;
+          (bucket[day] = bucket[day] || []).push({ label, link: ev.htmlLink || "https://calendar.google.com", allDay, color: cal.color });
+        });
+      }));
       monthCache[key] = bucket;
     }
 
@@ -1652,6 +1666,18 @@
           onChange: (v) => { weekStart = v; CFG.set("agenda", "weekStart", v); paint(); } },
         { type: "toggle", label: "Afficher les événements « journée entière »", value: showAllDay,
           onChange: (v) => { showAllDay = v; CFG.set("agenda", "allDay", v); paint(); } },
+        calendars && calendars.length > 1
+          ? { type: "multiselect", label: "Agendas affichés", placeholder: "Rechercher un agenda…",
+              items: calendars.map((c) => ({ value: c.id, label: c.summary, emoji: "📅" })),
+              isSelected: (v) => hiddenCalendars.indexOf(v) === -1,
+              onToggle: (v) => {
+                const i = hiddenCalendars.indexOf(v);
+                if (i === -1) hiddenCalendars.push(v); else hiddenCalendars.splice(i, 1);
+                CFG.set("agenda", "hiddenCalendars", hiddenCalendars);
+                Object.keys(monthCache).forEach((k) => delete monthCache[k]);
+                paint(); load(false);
+              } }
+          : null,
         { type: "button", label: connected ? "Reconnecter Google Agenda" : "Connecter Google Agenda", primary: !connected,
           onClick: () => { Settings.close(); load(true).catch((e) => console.warn("[agenda] connect", e)); } },
       ]);
