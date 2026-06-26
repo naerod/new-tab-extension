@@ -3,6 +3,11 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.13] — 2026-06-26 — Pop-up jour : bouton « Voir la journée » repensé
+- Déplacé du corps de la pop-up vers l'en-tête, sur la même ligne que la date (entre le titre et le ×).
+- Devenu une icône seule (flèche de redirection `SVGI.extLink`, nouvelle icône) au lieu d'un bouton texte souligné.
+- `Router.open` accepte un 5ᵉ paramètre optionnel `headerHtml` pour ce genre d'action contextuelle dans l'en-tête (réutilisable par d'autres pop-up à l'avenir).
+
 ## [0.18.12] — 2026-06-26 — Clic sur une chip d'évènement → détail du jour (plus le lien direct)
 - Dans la grille mois/semaine, cliquer sur une chip d'évènement ouvre désormais la pop-up de détail du jour (comme cliquer ailleurs sur la journée), au lieu d'ouvrir directement le lien Google Calendar.
 - Le lien direct reste accessible **depuis la pop-up** : cliquer sur l'évènement à l'intérieur du détail du jour redirige vers Google Calendar, comme avant.

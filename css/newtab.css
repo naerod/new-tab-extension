@@ -1228,13 +1228,16 @@ html[data-theme="light"] .view-backdrop{ background:rgba(20,18,15,.34); }
 html[data-theme="light"] .view-panel{ background:#fff; box-shadow:0 24px 70px rgba(28,26,22,.22); }
 @keyframes vb-in{ from{ opacity:0;} to{ opacity:1;} }
 @keyframes vp-in{ from{ opacity:0; transform:translateY(10px) scale(.99);} to{ opacity:1; transform:none;} }
-.view-head{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 20px; position:sticky; top:0; }
-.view-close{ width:38px; height:38px; flex:none; }
+.view-head{ display:flex; align-items:center; gap:14px; margin:0 0 20px; position:sticky; top:0; }
+.view-close{ width:38px; height:38px; flex:none; margin-left:auto; }
 .view-close svg{ width:20px; height:20px; }
 .view-title{ font-size:23px; font-weight:600; color:var(--ink); letter-spacing:-.01em; }
 .view-body{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:var(--gap); align-items:start; }
 .view-panel.day-panel{ width:min(560px,92vw); height:auto; max-height:80vh; padding:22px 24px 26px; }
-.dd-gcal{ display:inline-flex; margin-bottom:16px; }
+.dd-gcal{ display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; flex:none;
+  border-radius:8px; color:var(--ink-3); text-decoration:none; transition:.15s; }
+.dd-gcal:hover{ color:var(--ink); background:var(--hover); }
+.dd-gcal svg{ width:18px; height:18px; }
 .dd-list{ grid-column:1/-1; display:flex; flex-direction:column; gap:10px; }
 .dd-ev{ display:block; background:linear-gradient(180deg,var(--card-2),var(--card)); border:1px solid var(--line); border-left:3px solid var(--line-2); border-radius:var(--r); padding:14px 16px; text-decoration:none; transition:border-color .14s, background .14s; }
 .dd-ev:hover{ border-color:var(--accent-line); background:var(--hover); }

@@ -282,6 +282,7 @@
       eye: w('<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>'),
       eyeOff: w('<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75C21.27 7.61 17 4.5 12 4.5c-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53a5 5 0 0 1-5-5c0-.79.2-1.53.53-2.2zm4.31-.78 3.15 3.15.02-.16a3 3 0 0 0-3-3l-.17.01z"/>'),
       pin: w('<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/>'),
+      extLink: w('<path d="M14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3zM5 5v2h6V5H5zm0 4v10h14v-9h-2v7H7V9H5z"/>'),
     };
   })();
 
@@ -1718,9 +1719,8 @@
       let evs = (monthCache[key] || {})[dn] || [];
       if (!showAllDay) evs = evs.filter((e) => !e.allDay);
       evs = evs.slice().sort((a, b) => (a.allDay === b.allDay) ? ((a.start && b.start) ? a.start - b.start : 0) : (a.allDay ? -1 : 1));
-      const gcalLink = `<a class="btn dd-gcal" href="https://calendar.google.com/calendar/r/day/${y}/${m}/${dn}" target="_blank" rel="noopener">Voir la journée sur Google Agenda</a>`;
-      if (!evs.length) return gcalLink + '<div class="dd-list"><div class="empty">Aucun évènement ce jour-là.</div></div>';
-      return gcalLink + '<div class="dd-list">' + evs.map((e) => {
+      if (!evs.length) return '<div class="dd-list"><div class="empty">Aucun évènement ce jour-là.</div></div>';
+      return '<div class="dd-list">' + evs.map((e) => {
         const time = e.allDay ? (e.multi ? "Toute la journée · plusieurs jours" : "Toute la journée") : (e.start ? frTime(e.start) + (e.end ? " – " + frTime(e.end) : "") : "");
         const attendeesHtml = e.attendees && e.attendees.length
           ? '<div class="dd-attendees">' + e.attendees.map((a) => `<span class="dd-att${a.self ? " self" : ""}" title="${esc(STATUS[a.status] || "")}">${esc(a.name)}</span>`).join("") + '</div>' : "";
@@ -1740,7 +1740,8 @@
       if (chip) e.preventDefault();   // une chip d'évènement ouvre aussi le détail du jour, pas son lien direct
       const [y, m, dn] = day.dataset.date.split("-").map((x) => parseInt(x, 10));
       const lbl = new Intl.DateTimeFormat(LOCALE(), { weekday: "long", day: "numeric", month: "long" }).format(new Date(y, m - 1, dn));
-      Router.open(lbl, dayDetailHtml(day.dataset.date), null, "day-panel");
+      const gcalLink = `<a class="dd-gcal" href="https://calendar.google.com/calendar/r/day/${y}/${m}/${dn}" target="_blank" rel="noopener" aria-label="Voir la journée sur Google Agenda">${SVGI.extLink}</a>`;
+      Router.open(lbl, dayDetailHtml(day.dataset.date), null, "day-panel", gcalLink);
     });
 
     // clic ailleurs sur la carte → vue mois aujourd'hui
@@ -2583,12 +2584,13 @@
      ============================================================ */
   const Router = (function () {
     const layer = $("#viewLayer");
-    function open(title, bodyHtml, afterRender, panelClass) {
+    function open(title, bodyHtml, afterRender, panelClass, headerHtml) {
       if (!layer) return;
       const closeLbl = LANG === "fr" ? "Fermer" : "Close";
       layer.innerHTML = '<div class="view-backdrop"></div>'
         + '<div class="view-panel' + (panelClass ? " " + panelClass : "") + '" role="dialog" aria-modal="true" aria-label="' + escHtml(title) + '">'
         + '<div class="view-head"><h2 class="view-title">' + escHtml(title) + '</h2>'
+        + (headerHtml || "")
         + '<button type="button" class="view-close gear" aria-label="' + closeLbl + '">' + SVGI.close + '</button></div>'
         + '<div class="view-body">' + bodyHtml + '</div></div>';
       document.body.classList.add("in-view");
