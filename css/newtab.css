@@ -983,7 +983,7 @@ img.fav-dark{ filter:brightness(0) invert(1); }
 
 /* liste réordonnable / masquable / supprimable */
 .cfg-list{ display:flex; flex-direction:column; gap:6px; }
-.cfg-litem{ display:flex; align-items:center; gap:7px; background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:6px 8px; }
+.cfg-litem{ display:flex; align-items:center; gap:7px; background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:6px 8px; transition:opacity .12s, border-color .12s; }
 .cfg-litem .nm{ flex:1; min-width:0; font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cfg-litem .nm small{ color:var(--ink-4); margin-left:6px; }
 .cfg-litem.off .nm{ color:var(--ink-4); text-decoration:line-through; }
@@ -992,6 +992,10 @@ img.fav-dark{ filter:brightness(0) invert(1); }
 .cfg-litem button:hover{ color:var(--ink); border-color:var(--line); }
 .cfg-litem button:disabled{ opacity:.3; cursor:default; }
 .cfg-litem .rm:hover{ color:var(--down); border-color:var(--down); }
+.cfg-litem .grip{ flex:none; width:16px; height:16px; color:var(--ink-4); cursor:grab; display:inline-flex; align-items:center; justify-content:center; }
+.cfg-litem .grip svg{ width:14px; height:14px; }
+.cfg-litem.dragging{ opacity:.4; }
+.cfg-litem.drag-over{ border-color:var(--accent-line); }
 .cfg-add{ margin-top:4px; }
 
 /* groupe de cases sélectionnables (widgets, métriques…) — pilules sans checkbox :

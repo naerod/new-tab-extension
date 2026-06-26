@@ -3,6 +3,10 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.16] — 2026-06-26 — Glisser-déposer sur les listes réordonnables (`cfg-list`)
+- Composant partagé `cfg-list` (Agendas affichés, fuseaux horaires, etc.) : ajout du glisser-déposer (HTML5 drag-and-drop natif) en plus des flèches haut/bas déjà présentes — les deux méthodes coexistent. Poignée visuelle (icône grip) + retour visuel pendant le glisser (opacité réduite sur l'élément déplacé, bordure accentuée sur la cible).
+- Le bouton masquer/afficher (œil) est inchangé.
+
 ## [0.18.15] — 2026-06-26 — Agenda : ordre de priorité des agendas réordonnable
 - Le réglage « Agendas affichés » passe d'un multiselect (sans ordre) à une **liste réordonnable** (flèches haut/bas + œil pour masquer, composant déjà utilisé pour les fuseaux horaires) — persisté via `CFG agenda.calendarOrder`.
 - Cet ordre devient déterminant pour la troncature des chips (« +N ») dans la grille mois/semaine et l'ordre d'affichage dans la pop-up de détail jour : les agendas en haut de la liste passent en priorité avant l'heure de l'évènement.
