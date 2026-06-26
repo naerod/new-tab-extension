@@ -940,7 +940,7 @@ img.fav-dark{ filter:brightness(0) invert(1); }
 .cfg-x{ border:0; background:transparent; color:var(--ink-3); line-height:1; cursor:pointer; width:30px; height:30px; border-radius:7px; transition:.15s; display:inline-flex; align-items:center; justify-content:center; }
 .cfg-x svg{ width:18px; height:18px; }
 .cfg-x:hover{ color:var(--ink); background:var(--hover); }
-.cfg-body{ max-height:min(80vh,720px); overflow:auto; margin:0 -4px; padding:0 28px 0 4px; }
+.cfg-body{ max-height:min(80vh,720px); overflow:auto; margin:0 -4px; padding:0 18px 0 4px; }
 
 .cfg-field{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 0; border-top:1px solid var(--line); }
 .cfg-field:first-child{ border-top:0; }

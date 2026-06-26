@@ -3,6 +3,9 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.21] — 2026-06-26 — Re-fix de l'espace autour de la scrollbar (calcul précédent faux)
+- Le calcul de la v0.18.19 supposait que le padding-right était réduit par la largeur de la scrollbar (28px = 18px visés + 10px de scrollbar) — en pratique Chrome ne consomme pas le padding ainsi, donnant un espace gauche bien plus grand que le droit. Padding-right ramené à 18px (= espace droit réel), désormais symétrique.
+
 ## [0.18.20] — 2026-06-26 — Listes réordonnables : drag-and-drop uniquement, vraie insertion
 - Retrait des flèches haut/bas sur `cfg-list` (toutes les listes réordonnables de l'app) — uniquement le glisser-déposer désormais.
 - **Fix du bug visuel** : le highlight "drag-over" n'était jamais nettoyé sur les lignes précédemment survolées pendant un glissement (lignes qui semblaient se dupliquer/chevaucher).
