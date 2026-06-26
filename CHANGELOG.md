@@ -3,6 +3,11 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.7] — 2026-06-26 — Projet Google Cloud dédié pour l'Agenda (`naerod-newtab`)
+- **Problème découvert** : le client OAuth de l'Agenda partageait le même écran de consentement Google que mon propre accès Claude/MCP (projet `dorianjulien-claude-mcp`), tous deux affichés sous le nom « Claude MCP » dans les permissions Google de l'utilisateur — impossible de les distinguer ou de révoquer l'un sans l'autre.
+- **Fix** : nouveau projet Google Cloud dédié `naerod-newtab` (API Calendar activée), écran de consentement « Naerod's new tab », scope `calendar.readonly`, statut **Production**, nouveau client OAuth « Extension Chrome ». `manifest.json` mis à jour avec ce nouveau `client_id`.
+- L'ancien client (dans `dorianjulien-claude-mcp`) reste à supprimer une fois la bascule confirmée en usage réel.
+
 ## [0.18.6] — 2026-06-25 — Fix vérification Agenda : 401 à tort sur userinfo
 - Diagnostic (logs ajoutés en 0.18.5) : `getAuthToken` fonctionnait déjà correctement (nouveau client OAuth « Extension Chrome » OK), mais la vérification du bouton appelait `oauth2/v3/userinfo`, qui exige les scopes `openid`/`email`/`profile` — absents puisque seul `calendar.readonly` est demandé. Résultat : 401 systématique, bouton bloqué sur « Réessayer » malgré une connexion réussie.
 - **Fix** : vérification basée sur `calendar/v3/users/me/calendarList` — l'API réellement couverte par le scope accordé.
