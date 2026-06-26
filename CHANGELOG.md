@@ -3,6 +3,9 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.18] — 2026-06-26 — Espace entre le contenu et la scrollbar des pop-up de réglages
+- `.cfg-body` (corps scrollable des pop-up de réglages) : padding droit élargi (4px → 12px) pour créer un espace visuel entre le contenu (listes, boutons…) et la scrollbar, qui collait directement au contenu.
+
 ## [0.18.17] — 2026-06-26 — Scrollbar personnalisée (suit le thème sombre/clair)
 - Chrome affichait sa scrollbar native, toujours claire, même en thème sombre — visible et discordant sur les pop-up (réglages, détail jour) qui scrollent.
 - Scrollbar redessinée (`::-webkit-scrollbar` + `scrollbar-color`) avec les couleurs déjà utilisées par le thème (`--line-2`/`--ink-4`) — s'adapte automatiquement entre sombre et clair.
