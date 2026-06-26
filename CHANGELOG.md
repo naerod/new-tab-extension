@@ -3,6 +3,11 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+## [0.18.15] — 2026-06-26 — Agenda : ordre de priorité des agendas réordonnable
+- Le réglage « Agendas affichés » passe d'un multiselect (sans ordre) à une **liste réordonnable** (flèches haut/bas + œil pour masquer, composant déjà utilisé pour les fuseaux horaires) — persisté via `CFG agenda.calendarOrder`.
+- Cet ordre devient déterminant pour la troncature des chips (« +N ») dans la grille mois/semaine et l'ordre d'affichage dans la pop-up de détail jour : les agendas en haut de la liste passent en priorité avant l'heure de l'évènement.
+- Fix annexe : le tri par jour était auparavant non déterministe (récupération en parallèle de plusieurs agendas, ordre d'arrivée variable) — désormais trié explicitement (priorité d'agenda → journée entière avant horaire → heure).
+
 ## [0.18.14] — 2026-06-26 — Fix décalage de la page à l'ouverture d'une pop-up
 - **Cause** : `body.in-view{ overflow:hidden }` (Router/Detail) masque la barre de défilement à l'ouverture d'une pop-up, ce qui élargit la page de la largeur de l'ancienne barre → léger décalage visuel de l'arrière-plan.
 - **Fix** : `scrollbar-gutter: stable` sur `html` — réserve toujours la place de la barre, qu'elle soit affichée ou non. Solution standard, CSS pur, sans JS ; safe puisque l'extension cible exclusivement Chrome.

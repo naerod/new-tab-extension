@@ -1587,10 +1587,20 @@
     async function ensureCalendarList(tok) {
       if (calendars) return calendars;
       const j = await apiGet("https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250", tok);
-      calendars = (j.items || []).map((c) => ({ id: c.id, summary: c.summaryOverride || c.summary || c.id, color: c.backgroundColor || "" }));
+      const list = (j.items || []).map((c) => ({ id: c.id, summary: c.summaryOverride || c.summary || c.id, color: c.backgroundColor || "" }));
+      const order = CFG.get("agenda", "calendarOrder", []) || [];
+      list.sort((a, b) => {
+        const ia = order.indexOf(a.id), ib = order.indexOf(b.id);
+        if (ia === -1 && ib === -1) return 0;
+        if (ia === -1) return 1; if (ib === -1) return -1;
+        return ia - ib;
+      });
+      calendars = list;
       return calendars;
     }
     function visibleCalendars() { return (calendars || []).filter((c) => hiddenCalendars.indexOf(c.id) === -1); }
+    function calIndex(id) { return Math.max(0, (calendars || []).findIndex((c) => c.id === id)); }
+    function saveCalendarOrder() { CFG.set("agenda", "calendarOrder", (calendars || []).map((c) => c.id)); }
 
     async function fetchMonth(y, m, interactive) {
       const key = y + "-" + m;
@@ -1614,7 +1624,7 @@
           const addDay = (day, label, allDay, start, end, multi) => {
             (bucket[day] = bucket[day] || []).push({
               label, link: ev.htmlLink || "https://calendar.google.com", allDay, color: cal.color,
-              title, location: ev.location || "", attendees, start, end, calendar: cal.summary, multi,
+              title, location: ev.location || "", attendees, start, end, calendar: cal.summary, calendarId: cal.id, multi,
             });
           };
           if (s.dateTime) {
@@ -1631,6 +1641,17 @@
           }
         });
       }));
+      // ordre déterministe (l'appel parallèle ci-dessus ne garantit pas l'ordre d'arrivée) :
+      // priorité d'agenda (réglages) d'abord, puis journée entière avant les horaires, puis heure.
+      Object.keys(bucket).forEach((day) => {
+        bucket[day].sort((a, b) => {
+          const ia = calIndex(a.calendarId), ib = calIndex(b.calendarId);
+          if (ia !== ib) return ia - ib;
+          if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
+          if (a.start && b.start) return a.start - b.start;
+          return 0;
+        });
+      });
       monthCache[key] = bucket;
     }
 
@@ -1684,12 +1705,18 @@
         { type: "toggle", label: "Afficher les événements « journée entière »", value: showAllDay,
           onChange: (v) => { showAllDay = v; CFG.set("agenda", "allDay", v); paint(); } },
         calendars && calendars.length > 1
-          ? { type: "multiselect", label: "Agendas affichés", placeholder: "Rechercher un agenda…",
-              items: calendars.map((c) => ({ value: c.id, label: c.summary, emoji: "📅" })),
-              isSelected: (v) => hiddenCalendars.indexOf(v) === -1,
-              onToggle: (v) => {
-                const i = hiddenCalendars.indexOf(v);
-                if (i === -1) hiddenCalendars.push(v); else hiddenCalendars.splice(i, 1);
+          ? { type: "list", label: "Agendas affichés", sub: "Ordre de priorité — décide quels agendas survivent au « +N » dans la grille.",
+              items: calendars.map((c) => ({ id: c.id, label: c.summary, hidden: hiddenCalendars.indexOf(c.id) !== -1 })),
+              move: (from, to) => {
+                const x = calendars.splice(from, 1)[0]; calendars.splice(to, 0, x);
+                saveCalendarOrder();
+                Object.keys(monthCache).forEach((k) => delete monthCache[k]);
+                paint(); load(false);
+              },
+              onToggle: (it) => {
+                it.hidden = !it.hidden;
+                const idx = hiddenCalendars.indexOf(it.id);
+                if (idx === -1) hiddenCalendars.push(it.id); else hiddenCalendars.splice(idx, 1);
                 CFG.set("agenda", "hiddenCalendars", hiddenCalendars);
                 Object.keys(monthCache).forEach((k) => delete monthCache[k]);
                 paint(); load(false);
@@ -1718,7 +1745,7 @@
       const key = y + "-" + (m - 1);
       let evs = (monthCache[key] || {})[dn] || [];
       if (!showAllDay) evs = evs.filter((e) => !e.allDay);
-      evs = evs.slice().sort((a, b) => (a.allDay === b.allDay) ? ((a.start && b.start) ? a.start - b.start : 0) : (a.allDay ? -1 : 1));
+      // déjà trié par priorité d'agenda (voir fetchMonth) — on conserve cet ordre ici.
       if (!evs.length) return '<div class="dd-list"><div class="empty">Aucun évènement ce jour-là.</div></div>';
       return '<div class="dd-list">' + evs.map((e) => {
         const time = e.allDay ? (e.multi ? "Toute la journée · plusieurs jours" : "Toute la journée") : (e.start ? frTime(e.start) + (e.end ? " – " + frTime(e.end) : "") : "");
