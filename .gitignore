@@ -4,3 +4,4 @@ node_modules/
 docs/secrets*
 docs/shots/
 _backend/.env
+claude/
