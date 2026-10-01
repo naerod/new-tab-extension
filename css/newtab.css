@@ -1207,6 +1207,7 @@ img.fav-dark{ filter:brightness(0) invert(1); }
   .ob-spacer{ flex:1; }
   .ob-back,.ob-skip{ background:none; border:none; font:inherit; font-size:14px; color:var(--ink-3); cursor:pointer; padding:8px 6px; }
   .ob-back:hover,.ob-skip:hover{ color:var(--ink); }
+  .ob-have{ display:block; margin:14px auto 0; color:var(--accent); }
   .ob-next{
     background:var(--accent); border:none; color:#1a1411; border-radius:10px;
     padding:11px 22px; font:inherit; font-size:14.5px; font-weight:600; cursor:pointer; transition:filter .15s;

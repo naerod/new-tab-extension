@@ -6,6 +6,7 @@
 <title>Nouvel onglet</title>
 <!-- Fonts embedded locally (../fonts via @font-face in newtab.css). No remote font links. -->
 <link rel="stylesheet" href="css/newtab.css">
+<link rel="stylesheet" href="css/changelog.css">
 </head>
 <body>
 <main class="wrap">
@@ -226,7 +227,11 @@
   </div>
 </div>
 
+<script src="js/account.js"></script>
+<script src="js/sync.js"></script>
 <script src="js/newtab.js"></script>
 <script type="module" src="js/app-bridge.js"></script>
+<naerod-version class="ver-badge" src="changelog.json" href="changelog.html"></naerod-version>
+<script type="module" src="js/changelog-badge.js"></script>
 </body>
 </html>

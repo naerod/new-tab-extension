@@ -3,6 +3,21 @@
 Format inspiré de Keep a Changelog + SemVer dev (`0.MINOR.PATCH`, voir ADR-008).
 Chaque version est taguée dans git (`git checkout vX.Y.Z` pour y revenir). Dates en heure locale Paris.
 
+> Depuis la 0.19.0, la **source de vérité est `changelog.json`** (affiché par la page « Journal des versions » et le badge de version). Ce fichier est conservé pour l'historique ; ajouter les nouvelles entrées dans `changelog.json`.
+
+## [0.21.0] — 2026-10-01 — Synchro des réglages par le compte ae
+- `js/sync.js` + naerod-profile 0.2.0 (`/api/profile/sync/new-tab`), avatar/profil dans les réglages. Voir changelog.json.
+
+## [0.20.1] — 2026-10-01 — « J'ai déjà un compte »
+- Bouton sur l'étape d'accueil de l'assistant : connexion ae puis onboarding sauté. Voir changelog.json.
+
+## [0.20.0] — 2026-10-01 — Compte ae (Authentik) : connexion réelle
+- Client OIDC public `newtab-ext` (application Authentik `new-tab`, PKCE, redirect `https://<id>.chromiumapp.org/`) ; `js/account.js` ; étape « compte » de l'assistant et section Réglages. Voir changelog.json.
+
+## [0.19.0] — 2026-10-01 — Journal des versions + Artificial Analysis
+- Journal des versions intégré (`changelog.html`, badge `<naerod-version>` en bas à droite) : module partagé naerod-ui copié dans `js/vendor/naerod-ui/` (CSP MV3), police d'icônes embarquée.
+- IA rapide : Copilot remplacé par Artificial Analysis.
+
 ## [0.18.21] — 2026-06-26 — Re-fix de l'espace autour de la scrollbar (calcul précédent faux)
 - Le calcul de la v0.18.19 supposait que le padding-right était réduit par la largeur de la scrollbar (28px = 18px visés + 10px de scrollbar) — en pratique Chrome ne consomme pas le padding ainsi, donnant un espace gauche bien plus grand que le droit. Padding-right ramené à 18px (= espace droit réel), désormais symétrique.
 

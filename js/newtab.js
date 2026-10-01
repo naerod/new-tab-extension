@@ -68,9 +68,13 @@
       "ob.start": "Commencer", "ob.continue": "Continuer", "ob.back": "Retour",
       "ob.name.title": "Comment t'appelles-tu ?", "ob.name.sub": "Pour personnaliser ta salutation.", "ob.name.ph": "Prénom",
       "ob.city.title": "Où es-tu ?", "ob.city.sub": "Pour la météo locale. Sinon, ta géolocalisation sera utilisée.", "ob.city.ph": "Ville ou code postal", "ob.city.detecting": "Détection en cours…",
-      "ob.google.title": "Ton compte Google",
-      "ob.google.sub": "Connecte-toi pour afficher ton Agenda Google et tes mails Gmail (lecture seule). Tu peux aussi le faire plus tard.",
-      "ob.google.btn": "Connecter Google", "ob.google.connecting": "Connexion…", "ob.google.ok": "✓ Connecté", "ob.google.retry": "Réessayer",
+      "ob.have": "J'ai déjà un compte",
+      "ob.account.title": "Ton compte ae",
+      "ob.account.sub": "Un seul compte pour tout l'écosystème ae (avec Google si tu veux) : ton profil et tes réglages te suivent sur tous tes navigateurs. Tu peux aussi le faire plus tard.",
+      "ob.account.btn": "Se connecter", "ob.account.ok": "✓ Connecté : %s", "ob.account.fail": "Connexion impossible. Réessaie.",
+      "ob.google.title": "Google Agenda et Gmail",
+      "ob.google.sub": "Pour afficher ton Agenda Google et tes mails Gmail (lecture seule), autorise aussi l'accès à tes données Google :",
+      "ob.google.btn": "Autoriser Agenda / Gmail", "ob.google.connecting": "Connexion…", "ob.google.ok": "✓ Connecté", "ob.google.retry": "Réessayer",
       "ob.widgets.title": "Tes widgets", "ob.widgets.sub": "Active ce que tu veux voir. Modifiable à tout moment via la roue ⚙ en haut à droite.",
       "ob.sports.title": "Quels sports suis-tu ?", "ob.sports.sub": "Coche tes sports — le widget Sport s'adapte. Tu pourras suivre une équipe précise dans les réglages.",
       "ob.sports.leagues": "Quelles ligues de football suivre ?", "ob.sports.leaguesPh": "Rechercher une ligue…",
@@ -80,6 +84,7 @@
       "ob.done.btn": "Lancer mon tableau de bord",
       // réglages généraux
       "card.ia": "IA", "card.system": "Système",
+      "set.account.in": "Compte ae : réglages synchronisés.", "set.account.out": "Se déconnecter", "set.account.profile": "Gérer mon profil (photo, nom…)", "set.account.off": "Compte ae : non connecté. Connecte-toi pour retrouver ton profil et tes réglages partout.",
       "set.general": "Réglages généraux", "set.name": "Ton prénom", "set.name.sub": "Affiché dans la salutation.",
       "set.clock.info": "Horloge principale et fuseaux horaires secondaires.",
       "set.clock.local": "Horloge principale : heure locale", "set.clock.city": "Ville de l'horloge principale",
@@ -150,9 +155,13 @@
       "ob.start": "Get started", "ob.continue": "Continue", "ob.back": "Back",
       "ob.name.title": "What's your name?", "ob.name.sub": "To personalize your greeting.", "ob.name.ph": "First name",
       "ob.city.title": "Where are you?", "ob.city.sub": "For local weather. Otherwise your geolocation is used.", "ob.city.ph": "City or postal code", "ob.city.detecting": "Detecting…",
-      "ob.google.title": "Your Google account",
-      "ob.google.sub": "Connect to show your Google Calendar and Gmail messages (read-only). You can also do it later.",
-      "ob.google.btn": "Connect Google", "ob.google.connecting": "Connecting…", "ob.google.ok": "✓ Connected", "ob.google.retry": "Try again",
+      "ob.have": "I already have an account",
+      "ob.account.title": "Your ae account",
+      "ob.account.sub": "One account for the whole ae ecosystem (with Google if you like): your profile and settings follow you across browsers. You can also do it later.",
+      "ob.account.btn": "Sign in", "ob.account.ok": "✓ Signed in: %s", "ob.account.fail": "Could not sign in. Try again.",
+      "ob.google.title": "Google Calendar and Gmail",
+      "ob.google.sub": "To show your Google Calendar and Gmail messages (read-only), also allow access to your Google data:",
+      "ob.google.btn": "Allow Calendar / Gmail", "ob.google.connecting": "Connecting…", "ob.google.ok": "✓ Connected", "ob.google.retry": "Try again",
       "ob.widgets.title": "Your widgets", "ob.widgets.sub": "Turn on what you want to see. Change it anytime from the ⚙ gear at the top right.",
       "ob.sports.title": "Which sports do you follow?", "ob.sports.sub": "Tick your sports — the Sport widget adapts. You can follow a specific team in settings.",
       "ob.sports.leagues": "Which football leagues to follow?", "ob.sports.leaguesPh": "Search a league…",
@@ -161,6 +170,7 @@
       "ob.done.sub": "Every card has a ⚙ gear to personalize it: Steam ID for CS2, your URLs for Websites, your watchlist for Markets…",
       "ob.done.btn": "Open my dashboard",
       "card.ia": "AI", "card.system": "System",
+      "set.account.in": "ae account: settings synced.", "set.account.out": "Sign out", "set.account.profile": "Manage my profile (photo, name…)", "set.account.off": "ae account: not signed in. Sign in to get your profile and settings everywhere.",
       "set.general": "General settings", "set.name": "Your name", "set.name.sub": "Shown in the greeting.",
       "set.clock.info": "Main clock and secondary time zones.",
       "set.clock.local": "Main clock: local time", "set.clock.city": "Main clock city",
@@ -491,6 +501,13 @@
     function build(f) {
       if (f.type === "info") {
         const p = document.createElement("p"); p.className = "cfg-info"; p.textContent = f.text; return p;
+      }
+      if (f.type === "account") {
+        const d = document.createElement("div"); d.className = "cfg-account";
+        const im = document.createElement("img"); im.alt = ""; im.width = 40; im.height = 40;
+        im.src = f.avatar; im.addEventListener("error", () => { im.remove(); d.insertAdjacentHTML("afterbegin", '<span class="cfg-acc-ph">' + escHtml((f.name || "?").charAt(0).toUpperCase()) + "</span>"); });
+        const tx = document.createElement("div"); tx.innerHTML = '<div class="cfg-flabel">' + escHtml(f.name) + "</div>" + (f.sub ? '<div class="cfg-fsub">' + escHtml(f.sub) + "</div>" : "");
+        d.appendChild(im); d.appendChild(tx); return d;
       }
       if (f.type === "toggle") {
         const sw = document.createElement("label"); sw.className = "cfg-switch";
@@ -871,8 +888,27 @@
     // panneau de réglages globaux
     const WLBL = { shortcuts: "card.shortcuts", ia: "card.ia", homelab: "card.system", weather: "card.weather", stocks: "card.stocks", recent: "card.recent", agenda: "card.agenda", news: "card.news", sport: "card.sport", sites: "card.sites" };
     const widgetLabel = (w) => WLBL[w.k] ? t(WLBL[w.k]) : w.t;
+    let aeUser = null;
+    if (window.NRDSync) window.NRDSync.start();
+    if (window.NRDAccount) {
+      window.NRDAccount.getUser().then((u) => { aeUser = u; });
+      window.NRDAccount.onChange((u) => { aeUser = u; });
+    }
+    function accountItems() {
+      if (!window.NRDAccount) return [];
+      return aeUser ? [
+        { type: "account", name: aeUser.name || aeUser.username, sub: aeUser.email || t("set.account.in"),
+          avatar: window.NRDAccount.API_BASE + "/api/profile/avatar/" + encodeURIComponent(aeUser.username) + "?w=160" },
+        { type: "button", label: t("set.account.profile"), onClick: () => window.open(window.NRDAccount.API_BASE + "/profil", "_blank", "noopener") },
+        { type: "button", label: t("set.account.out"), onClick: () => window.NRDAccount.logout().then(openSettings) },
+      ] : [
+        { type: "info", text: t("set.account.off") },
+        { type: "button", label: t("ob.account.btn"), onClick: () => window.NRDAccount.login().then(() => window.NRDSync.sync()).then((r) => { if (r === "applied") location.reload(); else openSettings(); }).catch(() => {}) },
+      ];
+    }
     function openSettings() {
       Settings.open(t("set.general"), [
+        ...accountItems(),
         { type: "segmented", label: t("lang.label"), value: LANG,
           options: [{ v: "fr", t: t("lang.fr") }, { v: "en", t: t("lang.en") }],
           onChange: (v) => setLang(v) },
@@ -1437,7 +1473,7 @@
       { id: "deepseek", n: "DeepSeek", u: "https://chat.deepseek.com" },
       { id: "kimi", n: "Kimi", u: "https://www.kimi.com" },
       { id: "qwen", n: "Qwen", u: "https://chat.qwen.ai", bare: true },
-      { id: "copilot", n: "Copilot", u: "https://copilot.microsoft.com" },
+      { id: "artificialanalysis", n: "Artificial Analysis", u: "https://artificialanalysis.ai/models" },
       { id: "lmarena", n: "LM Arena", u: "https://lmarena.ai" },
       { id: "poe", n: "Poe", u: "https://poe.com" },
       { id: "you", n: "You.com", u: "https://you.com" },
@@ -1449,7 +1485,7 @@
     const MAX_SERVICES = 11;
     const mini = $("#aiMini");
     if (!mini) return;
-    let order = CFG.get("ia", "order", DEFAULT_IDS).filter(byId);
+    let order = CFG.get("ia", "order", DEFAULT_IDS).map((id) => id === "copilot" ? "artificialanalysis" : id).filter(byId);   // migre l'ancien id Copilot
     if (!order.length) order = DEFAULT_IDS.slice();
     // par défaut : ouvre dans l'onglet courant (remplace « Nouvel onglet ») ; clic molette / Ctrl = nouvel onglet (natif)
     let newTab = CFG.get("ia", "newTab", false);
@@ -3294,6 +3330,24 @@
       body.appendChild(el("h2", "ob-title", t("ob.welcome.title")));
       body.appendChild(el("p", "ob-sub", t("ob.welcome.sub")));
       nav.next.textContent = t("ob.start");
+      /* Réinstallation / nouvelle machine : « J'ai déjà un compte » → connexion, onboarding sauté. */
+      if (window.NRDAccount) {
+        const has = el("button", "ob-skip ob-have"); has.type = "button"; has.textContent = t("ob.have");
+        const err = el("p", "ob-sub"); err.style.minHeight = "1.2em";
+        has.addEventListener("click", () => {
+          has.disabled = true; err.textContent = "";
+          window.NRDAccount.login()
+            .then((u) => {
+              return window.NRDSync.sync().catch((e) => { console.warn("[sync]", e); return "off"; }).then((r) => {
+                if (r === "applied") return location.reload();                       // réglages du compte restaurés
+                if (u && u.name && !CFG.get("user", "name", "")) CFG.set("user", "name", u.name);
+                if (SYNC) dbSet({ onboarded: true }, () => location.reload()); else location.reload();
+              });
+            })
+            .catch((e) => { console.error("[onboarding] ae login failed:", e && e.message ? e.message : e); err.textContent = t("ob.account.fail"); has.disabled = false; });
+        });
+        body.appendChild(has); body.appendChild(err);
+      }
     }
     function stepName(body) {
       body.appendChild(el("h2", "ob-title", t("ob.name.title")));
@@ -3326,7 +3380,27 @@
       }
     }
     function stepGoogle(body, nav) {
-      body.appendChild(el("h2", "ob-title", t("ob.google.title")));
+      /* 1) Compte ae (Authentik, « Continuer avec Google » inclus) — l'identité réelle de l'app. */
+      body.appendChild(el("h2", "ob-title", t("ob.account.title")));
+      body.appendChild(el("p", "ob-sub", t("ob.account.sub")));
+      const acct = el("button", "ob-gbtn"); acct.type = "button";
+      const msg = el("p", "ob-sub"); msg.style.minHeight = "1.2em";
+      function paint(u) {
+        acct.classList.toggle("ok", !!u);
+        acct.textContent = u ? t("ob.account.ok").replace("%s", u.name || u.username) : t("ob.account.btn");
+      }
+      paint(state.account);
+      acct.addEventListener("click", () => {
+        if (!window.NRDAccount) return;
+        acct.disabled = true; acct.textContent = t("ob.google.connecting"); msg.textContent = "";
+        window.NRDAccount.login()
+          .then((u) => window.NRDSync.sync().catch(() => "off").then((r) => { if (r === "applied") return location.reload(); state.account = u; paint(u); }))
+          .catch((e) => { console.error("[onboarding] ae login failed:", e && e.message ? e.message : e); state.account = null; paint(null); msg.textContent = t("ob.account.fail"); })
+          .then(() => { acct.disabled = false; });
+      });
+      body.appendChild(acct); body.appendChild(msg);
+      if (window.NRDAccount) window.NRDAccount.getUser().then((u) => { if (u && !state.account) { state.account = u; paint(u); } });
+      /* 2) Google Agenda / Gmail — accès aux données, distinct du compte. */
       body.appendChild(el("p", "ob-sub", t("ob.google.sub")));
       const btn = el("button", "ob-gbtn" + (state.google ? " ok" : "")); btn.type = "button"; btn.textContent = state.google ? t("ob.google.ok") : t("ob.google.btn");
       btn.addEventListener("click", () => {
