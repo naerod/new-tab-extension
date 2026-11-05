@@ -78,6 +78,18 @@ export function byteSize(value) {
   return Buffer.byteLength(s, "utf8");
 }
 
+// Stored data can be corrupted or tampered with (sync from another machine,
+// manual edits): only a plain object is accepted as config, only a well-formed
+// entry as cache.
+function asPlainObject(v) {
+  return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+}
+function isCacheEntry(e) {
+  return e && typeof e === "object" && "v" in e && Number.isFinite(e.ts)
+    && (e.ttl == null || Number.isFinite(e.ttl));
+}
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
 export function createStorage(opts = {}) {
   const chromeApi = opts.chrome ?? globalThis.chrome;
   const sync = makeArea(opts.syncArea ?? chromeApi?.storage?.sync ?? chromeApi?.storage?.local);
@@ -93,7 +105,7 @@ export function createStorage(opts = {}) {
     if (configCache) return configCache;
     if (!loadPromise) {
       loadPromise = sync.get({ [CONFIG_KEY]: {} }).then((r) => {
-        configCache = (r && r[CONFIG_KEY]) || {};
+        configCache = asPlainObject(r && r[CONFIG_KEY]);
         return configCache;
       });
     }
@@ -127,13 +139,16 @@ export function createStorage(opts = {}) {
   async function getConfig(key, def) {
     const cfg = await loadConfig();
     if (key === undefined) return cfg;
-    return cfg[key] !== undefined ? cfg[key] : def;
+    return hasOwn(cfg, key) && cfg[key] !== undefined ? cfg[key] : def;
   }
 
   function setConfig(key, val) {
     // Optimistic in-memory update + debounced sync write. Returns a promise that
     // resolves once the (debounced) write lands.
     if (!configCache) configCache = {};
+    if (key === "__proto__" || key === "constructor" || key === "prototype") {
+      return Promise.reject(new Error("invalid config key: " + key));
+    }
     if (val === undefined) delete configCache[key];
     else configCache[key] = val;
     const p = new Promise((resolve, reject) => pendingResolvers.push({ resolve, reject }));
@@ -151,7 +166,7 @@ export function createStorage(opts = {}) {
   async function getCache(key) {
     const r = await local.get(CACHE_PREFIX + key);
     const entry = r[CACHE_PREFIX + key];
-    if (!entry) return null;
+    if (!isCacheEntry(entry)) return null;
     if (entry.ttl != null && Date.now() - entry.ts > entry.ttl) return null; // expired
     return { value: entry.v, ts: entry.ts, age: Date.now() - entry.ts, stale: false };
   }
@@ -161,7 +176,7 @@ export function createStorage(opts = {}) {
   async function getCacheStale(key) {
     const r = await local.get(CACHE_PREFIX + key);
     const entry = r[CACHE_PREFIX + key];
-    if (!entry) return null;
+    if (!isCacheEntry(entry)) return null;
     const stale = entry.ttl != null && Date.now() - entry.ts > entry.ttl;
     return { value: entry.v, ts: entry.ts, age: Date.now() - entry.ts, stale };
   }
