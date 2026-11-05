@@ -266,6 +266,7 @@
     return "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=" +
       (size || 64) + "&url=" + encodeURIComponent(url);
   }
+  const safeHref = (u) => (globalThis.NTSanitize ? NTSanitize.safeHref(u) : "#");
   function escHtml(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
   // CSP forbids inline onerror=; wire favicon fallbacks (img[data-fb]) after render.
   // Supporte une chaîne de sources via data-next (ex. favicone → service Google → lettre).
@@ -1052,7 +1053,7 @@
     function favHtml(s) {
       if (s.emoji) return `<span class="sc-emoji-ic">${escHtml(s.emoji)}</span>`;   // emoji choisi
       const letter = letterOf(s);
-      if (s.icon) return `<img src="${escHtml(s.icon)}" alt="" data-fb="${escHtml(letter)}">`;  // URL d'icône perso
+      if (s.icon) return `<img src="${escHtml(globalThis.NTSanitize ? NTSanitize.safeImgSrc(s.icon) : "")}" alt="" data-fb="${escHtml(letter)}">`;  // URL d'icône perso
       if (!s.url || s.url === "#") return escHtml(letter);
       // base = service Google (couverture universelle : renvoie toujours une icône sensée, ex. X).
       // data-fav = favicone.com (suit les redirections, ex. gmail→enveloppe) → upgrade si réellement dispo.
@@ -1112,7 +1113,7 @@
       const tiles = items.map((s, idx) => {
         const lbl = escHtml(s.l || domainOf(s.url || ""));
         const tgt = (!isFolder(s) && newTab) ? ' target="_blank" rel="noopener"' : "";
-        const href = isFolder(s) ? "#" : escHtml(s.url || "#");
+        const href = isFolder(s) ? "#" : escHtml(safeHref(s.url || "#"));
         return `<a class="sc${isFolder(s) ? " folder" : ""}" href="${href}"${tgt} draggable="true" data-idx="${idx}" title="${lbl}" aria-label="${lbl}">
             <button type="button" class="del" data-del="${idx}" aria-label="Supprimer ${lbl}">${SVGI.close}</button>
             <span class="tile">${tileInner(s)}</span>
@@ -1417,7 +1418,7 @@
       const grid = fbModal.querySelector(".sc-fb-grid");
       grid.innerHTML = (f.items || []).map((k, j) => {
         const lbl = escHtml(k.l || domainOf(k.url || ""));
-        return `<a class="fb-item" href="${escHtml(k.url || "#")}"${tgt} draggable="true" data-j="${j}" title="${lbl}">
+        return `<a class="fb-item" href="${escHtml(safeHref(k.url || "#"))}"${tgt} draggable="true" data-j="${j}" title="${lbl}">
             <button type="button" class="del" data-fdel="${j}" aria-label="Retirer ${lbl}">${SVGI.close}</button>
             <span class="tile">${favHtml(k)}</span><span class="lbl">${lbl}</span>
           </a>`;
@@ -1587,7 +1588,7 @@
         let evs = evMap[dn] || [];
         if (!showAllDay) evs = evs.filter((e) => !e.allDay);
         const chips = evs.slice(0, 2)
-          .map((e) => `<a class="cal-ev" href="${esc(e.link)}" target="_blank" rel="noopener" title="${esc(e.label)}"${e.color ? ` style="background:${esc(e.color)}22;border-color:${esc(e.color)}55;color:${esc(e.color)}"` : ""}>${esc(e.label)}</a>`).join("");
+          .map((e) => `<a class="cal-ev" href="${esc(safeHref(e.link))}" target="_blank" rel="noopener" title="${esc(e.label)}"${e.color ? ` style="background:${esc(globalThis.NTSanitize ? NTSanitize.safeColor(e.color) : "")}22;border-color:${esc(globalThis.NTSanitize ? NTSanitize.safeColor(e.color) : "")}55;color:${esc(globalThis.NTSanitize ? NTSanitize.safeColor(e.color) : "")}"` : ""}>${esc(e.label)}</a>`).join("");
         const more = evs.length > 2 ? `<span class="cal-more">+${evs.length - 2}</span>` : "";
         const date = y + "-" + pad2(m + 1) + "-" + pad2(dn);
         html += `<div class="cal-day${today ? " today" : ""}" data-date="${date}"><span class="num tnum">${dn}</span>${chips}${more}</div>`;
@@ -1615,7 +1616,7 @@
       grid.innerHTML = '<div class="cal-week">' + days.map((d, i) => {
         const today = d.toDateString() === todayKey;
         const evs = evForDate(d);
-        const evHtml = evs.map((e) => `<a class="cal-wev" href="${esc(e.link)}" target="_blank" rel="noopener" title="${esc(e.label)}"${e.color ? ` style="background:${esc(e.color)}22;border-color:${esc(e.color)}55;color:${esc(e.color)}"` : ""}>${esc(e.label)}</a>`).join("");
+        const evHtml = evs.map((e) => `<a class="cal-wev" href="${esc(safeHref(e.link))}" target="_blank" rel="noopener" title="${esc(e.label)}"${e.color ? ` style="background:${esc(globalThis.NTSanitize ? NTSanitize.safeColor(e.color) : "")}22;border-color:${esc(globalThis.NTSanitize ? NTSanitize.safeColor(e.color) : "")}55;color:${esc(globalThis.NTSanitize ? NTSanitize.safeColor(e.color) : "")}"` : ""}>${esc(e.label)}</a>`).join("");
         const date = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
         return `<div class="cal-wday${today ? " today" : ""}" data-date="${date}">
             <div class="wd-h">${lbls[i]}<b class="tnum">${d.getDate()}</b></div>
@@ -1803,7 +1804,7 @@
         const time = e.allDay ? (e.multi ? "Toute la journée · plusieurs jours" : "Toute la journée") : (e.start ? frTime(e.start) + (e.end ? " – " + frTime(e.end) : "") : "");
         const attendeesHtml = e.attendees && e.attendees.length
           ? '<div class="dd-attendees">' + e.attendees.map((a) => `<span class="dd-att${a.self ? " self" : ""}" title="${esc(STATUS[a.status] || "")}">${esc(a.name)}</span>`).join("") + '</div>' : "";
-        return `<a class="dd-ev" href="${esc(e.link)}" target="_blank" rel="noopener"${e.color ? ` style="border-left-color:${esc(e.color)}"` : ""}>
+        return `<a class="dd-ev" href="${esc(safeHref(e.link))}" target="_blank" rel="noopener"${e.color ? ` style="border-left-color:${esc(globalThis.NTSanitize ? NTSanitize.safeColor(e.color) : "")}"` : ""}>
           <div class="dd-time">${esc(time)}</div>
           <div class="dd-title">${esc(e.title)}</div>
           ${e.location ? `<div class="dd-loc">${SVGI.pin}${esc(e.location)}</div>` : ""}
@@ -2155,7 +2156,7 @@
     let lastItems = [];
     const newsItemHtml = (it) => {
       const when = it.ts ? rel(new Date(it.ts)) : "";
-      return `<a class="news-item" href="${esc(it.link)}" target="_blank" rel="noopener">
+      return `<a class="news-item" href="${esc(safeHref(it.link))}" target="_blank" rel="noopener">
           <div class="t">${esc(it.title)}</div>
           <div class="m">${it.src ? "<b>" + esc(it.src) + "</b>" : ""}${it.src && when ? " · " : ""}${when}</div>
         </a>`;
@@ -2233,7 +2234,7 @@
       const letter = dom.charAt(0).toUpperCase();
       const fav = faviconUrl(it.url, 32);
       const favHtml = fav ? `<img src="${fav}" alt="" data-fb="${escHtml(letter)}">` : escHtml(letter);
-      return `<a class="recent" href="${escHtml(it.url)}">
+      return `<a class="recent" href="${escHtml(safeHref(it.url))}">
           <span class="fav">${favHtml}</span>
           <span class="info"><span class="rt">${escHtml(title)}</span><span class="rd">${escHtml(dom)}</span></span>
           ${showTime ? `<span class="rtime tnum">${hm(it.lastVisitTime)}</span>` : ""}
@@ -2527,7 +2528,7 @@
       const r = results[s.url] || {};
       const up = r.status === "up";
       const meta = r.status ? (up ? (r.ms != null ? r.ms + " ms" : "OK") : "down") : "…";
-      return `<a class="site-row" href="${escHtml(normUrl(s.url))}" target="_blank" rel="noopener" title="${escHtml(normUrl(s.url))}">
+      return `<a class="site-row" href="${escHtml(safeHref(normUrl(s.url)))}" target="_blank" rel="noopener" title="${escHtml(normUrl(s.url))}">
           <span class="site-dot ${r.status ? (up ? "up" : "down") : ""}"></span>
           <span class="site-name">${escHtml(nameFor(s))}</span>
           ${showMs ? `<span class="site-meta">${escHtml(String(meta))}</span>` : ""}
