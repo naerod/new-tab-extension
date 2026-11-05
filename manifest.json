@@ -35,7 +35,6 @@
     "https://geocoding-api.open-meteo.com/*",
     "https://gemini.google.com/*",
     "https://query1.finance.yahoo.com/*",
-    "https://query2.finance.yahoo.com/*",
     "https://www.googleapis.com/*",
     "https://api.jolpi.ca/*",
     "https://site.api.espn.com/*",
@@ -65,5 +64,8 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
   }
 }
