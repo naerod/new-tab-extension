@@ -6,6 +6,7 @@
 // and re-renders on chrome.storage.onChanged. The newtab can also ask for an
 // immediate refresh via a message.
 
+import { isExtensionPage } from "./core/sender.js";
 import { storage } from "./core/storage.js";
 import { buildRegistry } from "./providers/index.js";
 import { COMP_TO_ESPN, BASKET_TO_ESPN } from "./providers/leagues.js";
@@ -110,7 +111,8 @@ chrome.runtime.onStartup.addListener(() => { ensureAlarm(); tick(); });
 chrome.alarms.onAlarm.addListener((a) => { if (a.name === ALARM) tick(); });
 
 // On-demand refresh from the newtab: chrome.runtime.sendMessage({type:"refresh"})
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!isExtensionPage(sender, chrome.runtime.id, chrome.runtime.getURL(""))) return false;
   if (msg?.type === "refresh") { tick().then(() => sendResponse({ ok: true })); return true; }
   return false;
 });
