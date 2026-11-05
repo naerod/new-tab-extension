@@ -34,3 +34,13 @@ test("providersFor respects the user's tier", async () => {
   const pp = await pro.providersFor({ sport: "football", capability: "liveScores" });
   assert.ok(pp.some((p) => p.key === "pro-live"));
 });
+
+test("hasFeature : une clé héritée (toString, constructor) n'est pas une feature Pro", async () => {
+  const free = setup();
+  assert.equal(await free.hasFeature("toString"), true);
+  assert.equal(await free.hasFeature("constructor"), true);
+});
+
+test("tier falsifié ou mal formé -> free", async () => {
+  for (const t of ["PRO", "pro ", 1, { pro: true }]) assert.equal(await setup(t).getTier(), "free");
+});

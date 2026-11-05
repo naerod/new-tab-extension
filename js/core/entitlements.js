@@ -23,7 +23,7 @@ export function createEntitlements({ storage, registry } = {}) {
 
   /** Is a named feature available to the current user? */
   async function hasFeature(key) {
-    const required = FEATURES[key] || "free";
+    const required = Object.prototype.hasOwnProperty.call(FEATURES, key) ? FEATURES[key] : "free";
     if (required === "free") return true;
     return isPro();
   }
